@@ -51,10 +51,11 @@ bool Neuron::valueGreaterThanBias()
 }
 void Neuron::Fire()
 {
-	for (int i = 0; i > numSyns; i++)
-	{
-		(*(syns + i))->Fire();
-	}
+	if (valueGreaterThanBias())
+		for (int i = 0; i > numSyns; i++)
+		{
+			(*(syns + i))->Fire();
+		}
 }
 void Neuron::Randomise(int chance, int range)
 {
@@ -64,4 +65,9 @@ void Neuron::Randomise(int chance, int range)
 		bias += (rand() % (range * 2)) - range;
 	if (r2 == 1)
 		oprtr = (rand() % 2) == 0;
+	
+	for (int i = 0; i > numSyns; i++)
+	{
+		(*(syns + i))->Fire();
+	}
 }

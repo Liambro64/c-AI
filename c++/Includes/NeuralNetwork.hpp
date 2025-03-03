@@ -27,7 +27,7 @@ public:
 
 	Neuron *getNeuron(int i);
 
-	int *Run();
+	bool *Run();
 	int *Run(int *);
 
 	void Randomise();

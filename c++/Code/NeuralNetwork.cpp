@@ -2,6 +2,7 @@
 
 NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int RandRange = 5, int RandChance = 100)
 {
+	//would do in main, but here is fine for now
 	srand(time(0));
 	// setting
 	randRange = RandRange;
@@ -76,13 +77,14 @@ Neuron *NeuralNetwork::getNeuron(int i)
 	return ((*(allUsableNeurons + a)) + b);
 }
 
-int *NeuralNetwork::Run()
+bool *NeuralNetwork::Run()
 {
+	//call fire on neurons, return output neuron's valueGreaterThanBias
 }
 int *NeuralNetwork::Run(int *) {
-
+	//call fire on neurons, return output neuron's val
 }
 
 void NeuralNetwork::Randomise() {
-
+	//r
 }
