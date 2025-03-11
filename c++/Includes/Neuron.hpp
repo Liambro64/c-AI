@@ -3,6 +3,7 @@
 # define NEURON_HPP
 # include "../Project.hpp"
 
+class Synapse;
 
 class Neuron
 {
@@ -22,11 +23,12 @@ public:
     void print() const;
 
 	//basic functions
-    int getBias() const { return bias; }
-    Synapse **getSynapses() const { return syns; }
+    int const getBias() const { return bias; }
+    Synapse ** const getSynapses() const { return syns; }
+    bool const getOperator() const { return oprtr; }
+
 	void addSynapse(Synapse* syn);
 	void addSynapses(Synapse** syns, int size);
-    bool getOperator() const { return oprtr; }
 	bool valueGreaterThanBias() ;
 	
 	//network functions
@@ -34,7 +36,7 @@ public:
 	void Randomise(int chance, int range);
 
 	//operators
-	Neuron add(int a) {
+	const void add(int a) {
 		val += a;
 	}
 };

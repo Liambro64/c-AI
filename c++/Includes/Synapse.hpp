@@ -3,6 +3,7 @@
 # define SYNAPSE_HPP
 # include "../Project.hpp"
 
+class Neuron;
 
 class Synapse {
 

@@ -19,10 +19,10 @@ Neuron::Neuron(int randRange)
 }
 void Neuron::addSynapse(Synapse *syn)
 {
+	Synapse **ret = syns;
 	syns = (Synapse **)calloc(numSyns + 1, sizeof(Synapse **));
 	if (numSyns != 0)
 	{
-		Synapse **ret = syns;
 		for (int i = 0; i < numSyns; i++)
 			*(syns + i) = *(ret + i);
 		free(ret);
@@ -33,10 +33,10 @@ void Neuron::addSynapse(Synapse *syn)
 
 void Neuron::addSynapses(Synapse **Syns, int size)
 {
-	syns = (Synapse **)calloc(numSyns + 1, sizeof(Synapse **));
+	Synapse **ret = syns;
+	syns = (Synapse **)calloc(numSyns + size, sizeof(Synapse **));
 	if (numSyns != 0)
 	{
-		Synapse **ret = syns;
 		for (int i = 0; i < numSyns; i++)
 			*(syns + i) = *(ret + i);
 		free(ret);

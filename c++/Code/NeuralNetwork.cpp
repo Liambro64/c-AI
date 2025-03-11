@@ -1,6 +1,6 @@
 #include "../Project.hpp"
 
-NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int RandRange = 5, int RandChance = 100)
+NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int RandRange, int RandChance)
 {
 	//would do in main, but here is fine for now
 	srand(time(0));
@@ -80,6 +80,10 @@ Neuron *NeuralNetwork::getNeuron(int i)
 bool *NeuralNetwork::Run()
 {
 	//call fire on neurons, return output neuron's valueGreaterThanBias
+	bool *vgtb = (bool *)calloc(outputs, sizeof(bool));
+	for (int i = 0; i < neurons; i++) {
+		(Neurons+i)->Fire();
+	}
 }
 int *NeuralNetwork::Run(int *) {
 	//call fire on neurons, return output neuron's val
