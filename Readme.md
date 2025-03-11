@@ -1,2 +1,2 @@
 # C++ AI
-This is a WIP simple AI I am using to learn CUDA  and C++->C# integration.
+This is a WIP simple Machine Learning AI I am using to learn CUDA  and C++->C# integration.
