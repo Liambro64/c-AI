@@ -6,7 +6,9 @@ Synapse::Synapse(int randRange, Neuron *frm, Neuron *too) {
 	from = frm;
 	to = too;
 }
-
+Synapse::~Synapse() {
+	std::cout << "Destroyed Synapse" << std::endl;
+}
 
 void Synapse::Fire() {
 	to->add(strength);

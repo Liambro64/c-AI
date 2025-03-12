@@ -1,6 +1,8 @@
 //FOR TESTING
 # include "../Project.hpp"
 int main(int argc, char **argv) {
-    printf("Hello, if all is loaded this should work");
+    NeuralNetwork *network = new NeuralNetwork(16, 512, 6);
+    printf("Neural Network made");
+    delete network;
     return 0;
 }

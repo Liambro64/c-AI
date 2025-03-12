@@ -14,33 +14,37 @@ private:
 	int			numSyns	{};
 	//if true b > v, if false b < v
 	bool		oprtr	{};
-    Synapse**	syns	{};
+    Synapse*	syns	{};
 
 public:
 	Neuron(int Bias, bool Oprtr);
     Neuron(int randRange);
+	~Neuron();
 
     void print();
 
 	//basic functions
     int const getBias() const { return bias; }
-    Synapse ** const getSynapses() const { return syns; }
+    Synapse * const getSynapses() const { return syns; }
     bool const getOperator() const { return oprtr; }
 
-	Synapse **addSynapse(Synapse* syn);
-	Synapse **addSynapses(Synapse**	Syns, int size);
-	Synapse **addSynapses(Synapse*	Syns, int size);
+	Synapse *addSynapse(Synapse* syn);
+	Synapse *addSynapses(Synapse*	Syns, int size);
 	bool valueGreaterThanBias() ;
 	
 	//network functions
-	Synapse **Fire();
-	Synapse **MakeSynapses(Neuron **tos, int amount, int randRange);
-	Synapse **MakeSynapse(Neuron *to, int randRange);
+	Synapse *Fire();
+	void	FireNow();
+	Synapse *MakeSynapses(Neuron **tos, int amount, int randRange);
+	Synapse *MakeSynapse(Neuron *to, int randRange);
 	void Randomise(int chance, int range);
 
 	//operators
 	void const add(int a) {
 		val += a;
+	}
+	void const set(int a) {
+		val = a;
 	}
 };
 
