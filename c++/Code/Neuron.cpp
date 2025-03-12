@@ -56,21 +56,6 @@ Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 	return syns;
 }
 
-Synapse *Neuron::addSynapses(Synapse *Syns, int size)
-{
-	Synapse *ret = syns;
-	syns = (Synapse *)calloc(numSyns + size, sizeof(Synapse));
-	if (numSyns != 0)
-	{
-		for (int i = 0; i < numSyns; i++)
-			*(syns + i) = *(ret + i);
-		free(ret);
-	}
-	for (int i = 0; i < size; i++)
-		*(syns + numSyns + i) = *(Syns + i);
-	numSyns += size;
-	return syns;
-}
 Synapse *Neuron::MakeSynapse(Neuron *to, int randRange)
 {
 	return addSynapse(new Synapse(randRange, this, to));
