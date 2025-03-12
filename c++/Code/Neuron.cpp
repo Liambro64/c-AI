@@ -17,7 +17,7 @@ Neuron::Neuron(int randRange)
 	this->val = 0;
 	this->syns = nullptr;
 }
-void Neuron::addSynapse(Synapse *syn)
+Synapse **Neuron::addSynapse(Synapse *syn)
 {
 	Synapse **ret = syns;
 	syns = (Synapse **)calloc(numSyns + 1, sizeof(Synapse **));
@@ -29,9 +29,10 @@ void Neuron::addSynapse(Synapse *syn)
 	}
 	*(syns + numSyns) = syn;
 	numSyns++;
+	return syns;
 }
 
-void Neuron::addSynapses(Synapse **Syns, int size)
+Synapse **Neuron::addSynapses(Synapse **Syns, int size)
 {
 	Synapse **ret = syns;
 	syns = (Synapse **)calloc(numSyns + size, sizeof(Synapse **));
@@ -44,18 +45,44 @@ void Neuron::addSynapses(Synapse **Syns, int size)
 	for (int i = 0; i < size; i++)
 		*(syns + i) = *(Syns + i);
 	numSyns += size;
+	return syns;
 }
+
+Synapse **Neuron::addSynapses(Synapse *Syns, int size)
+{
+	Synapse **ret = syns;
+	syns = (Synapse **)calloc(numSyns + size, sizeof(Synapse **));
+	if (numSyns != 0)
+	{
+		for (int i = 0; i < numSyns; i++)
+			*(syns + i) = *(ret + i);
+		free(ret);
+	}
+	for (int i = 0; i < size; i++)
+		*(syns + i) = (Syns + i);
+	numSyns += size;
+	return syns;
+}
+Synapse **Neuron::MakeSynapse(Neuron *to, int randRange) {
+	return addSynapse(new Synapse(randRange, this, to));
+}
+Synapse **Neuron::MakeSynapses(Neuron **tos, int amount, int randRange) {
+	Synapse *nSyns = (Synapse *)calloc(amount, sizeof(Synapse));
+	for (int i = 0; i < amount; i++) {
+		*(nSyns + i) = *(new Synapse(randRange, this, tos[i]));
+	}
+	return addSynapses(nSyns, amount);
+}
+
 bool Neuron::valueGreaterThanBias()
 {
 	return oprtr ? bias > val : bias < val;
 }
-void Neuron::Fire()
+Synapse **Neuron::Fire()
 {
 	if (valueGreaterThanBias())
-		for (int i = 0; i > numSyns; i++)
-		{
-			(*(syns + i))->Fire();
-		}
+		return syns;
+	return nullptr;
 }
 void Neuron::Randomise(int chance, int range)
 {

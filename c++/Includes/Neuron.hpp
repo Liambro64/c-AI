@@ -20,23 +20,26 @@ public:
 	Neuron(int Bias, bool Oprtr);
     Neuron(int randRange);
 
-    void print() const;
+    void print();
 
 	//basic functions
     int const getBias() const { return bias; }
     Synapse ** const getSynapses() const { return syns; }
     bool const getOperator() const { return oprtr; }
 
-	void addSynapse(Synapse* syn);
-	void addSynapses(Synapse** syns, int size);
+	Synapse **addSynapse(Synapse* syn);
+	Synapse **addSynapses(Synapse**	Syns, int size);
+	Synapse **addSynapses(Synapse*	Syns, int size);
 	bool valueGreaterThanBias() ;
 	
 	//network functions
-	void Fire();
+	Synapse **Fire();
+	Synapse **MakeSynapses(Neuron **tos, int amount, int randRange);
+	Synapse **MakeSynapse(Neuron *to, int randRange);
 	void Randomise(int chance, int range);
 
 	//operators
-	const void add(int a) {
+	void const add(int a) {
 		val += a;
 	}
 };
