@@ -5,6 +5,8 @@
 # include "Includes/Synapse.hpp"
 # include "Includes/NeuralNetwork.hpp"
 # include <stdlib.h>
+# include <stdio.h>
+# include <iostream>
 # include <time.h>
 # include <math.h>
 
