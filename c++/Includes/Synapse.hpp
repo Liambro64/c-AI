@@ -13,6 +13,7 @@ private:
 	Neuron* to;
 
 public:
+	Synapse();
 	Synapse(int randRange, Neuron *frm, Neuron *too);
 	~Synapse();
 

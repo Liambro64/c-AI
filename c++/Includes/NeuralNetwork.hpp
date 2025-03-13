@@ -9,27 +9,29 @@ class NeuralNetwork_Basic {
 //my implementation
 class NeuralNetwork {
 private:
-	Neuron *Inputs	;
-	Neuron *Neurons	;
-	Neuron *Outputs	;
-
-	Neuron **allUsableNeurons ;
+	std::unique_ptr<Neuron[]> Inputs	{};
+	std::unique_ptr<Neuron[]> Neurons	{};
+	std::unique_ptr<Neuron[]> Outputs	{};
 public:
-	int randRange 		;
-	int randChance		;
-	int midRepeats		;
-	int inputs			;
-	int neurons			;
-	int outputs			;
-	int usableNeurons	;
-	int outSyns			;
+	int randRange 		{};
+	int randChance		{};
+	int midRepeats		{};
+	int inputs			{};
+	int neurons			{};
+	int outputs			{};
+	int usableNeurons	{};
+	int outSyns			{};
 
-	NeuralNetwork(int ins, int mid, int out, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
+
+	NeuralNetwork();
+	NeuralNetwork(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
 	NeuralNetwork(NeuralNetwork *network);
 	~NeuralNetwork();
 	void DestroyNeurons();
 
-	Neuron *getNeuron(int i);
+	Neuron *getNeuron(int a, int b);
+	int		CreateSynapses(int maxSyns);
+	void Init(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
 
 	bool *Run();
 	bool hasNeuron(Neuron **ns, int size, Neuron *n);

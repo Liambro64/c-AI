@@ -1,7 +1,16 @@
 #include "../Project.hpp"
 
+Neuron::Neuron() {
+	bias = 0;
+	oprtr = 0;
+	numSyns = 0;
+	val = 0;
+	syns = 0;
+}
+
 Neuron::Neuron(int Bias, bool Oprtr)
 {
+	//printf("Creating Neuron With Basic Constructor\n");
 	this->bias = bias;
 	this->oprtr = Oprtr;
 	this->numSyns = 0;
@@ -17,43 +26,49 @@ Neuron::Neuron(int randRange)
 	this->val = 0;
 	this->syns = nullptr;
 }
+
 Neuron::~Neuron() {
-	if (syns != nullptr) {
-		for (int i = 0; i < numSyns; i++)
-			delete (syns + i);
-		free(syns);
-	}
-	std::cout << "Destroyed Neuron" << std::endl;
+	if (numSyns == 0)
+		return;
+	syns.reset();
 }
+
+void Neuron::InitRandomise(int range) {
+	
+	this->bias = (rand() % (range * 2)) - range;
+	this->oprtr = (rand() % 2) == 0;
+}
+
 Synapse *Neuron::addSynapse(Synapse *syn)
 {
-	Synapse *ret = syns;
-	syns = (Synapse *)calloc(numSyns + 1, sizeof(Synapse));
+	std::unique_ptr<Synapse[]> ret(new Synapse[numSyns + 1]);
+	int i = 0;
 	if (numSyns != 0)
 	{
-		for (int i = 0; i < numSyns; i++)
-			*(syns + i) = *(ret + i);
-		free(ret);
+		for (i = 0; i < numSyns; i++)
+			ret[i] = syns[i];
 	}
-	*(syns + numSyns) = *syn;
+	ret[i] = *(syn);
 	numSyns++;
-	return syns;
+	syns.reset(ret.release());
+	
+	return syns.get();
 }
 
 Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 {
-	Synapse *ret = syns;
-	syns = (Synapse *)calloc(numSyns + size, sizeof(Synapse));
+	std::unique_ptr<Synapse[]> ret(new Synapse[numSyns + size]);
+	int i = 0;
 	if (numSyns != 0)
 	{
-		for (int i = 0; i < numSyns; i++)
-			*(syns + numSyns + i) = *(ret + i);
-		free(ret);
+		for (i = 0; i < numSyns; i++)
+			ret[i] = syns[i];
 	}
-	for (int i = 0; i < size; i++)
-		*(syns + i) = *(Syns + i);
+	for (int j = 0; j < size; i++, j++)
+		ret[i] = Syns[i];
 	numSyns += size;
-	return syns;
+	syns.reset(ret.release());
+	return syns.get();
 }
 
 Synapse *Neuron::MakeSynapse(Neuron *to, int randRange)
@@ -62,12 +77,11 @@ Synapse *Neuron::MakeSynapse(Neuron *to, int randRange)
 }
 Synapse *Neuron::MakeSynapses(Neuron **tos, int amount, int randRange)
 {
-	Synapse *nSyns = (Synapse *)calloc(amount, sizeof(Synapse));
-	for (int i = 0; i < amount; i++)
-	{
-		*(nSyns + i) = *(new Synapse(randRange, this, tos[i]));
+	std::unique_ptr<Synapse[]> nSyns(new Synapse[amount]);
+	for (int i = 0; i < amount; i++) {
+		nSyns[i] = Synapse(randRange, this, tos[i]);
 	}
-	return addSynapses(nSyns, amount);
+	return addSynapses(nSyns.get(), amount);
 }
 
 bool Neuron::valueGreaterThanBias()
@@ -78,13 +92,13 @@ void Neuron::FireNow()
 {
 	for (int i = 0; i < numSyns; i++)
 	{
-		(syns + i)->Fire();
+		syns[i].Fire();
 	}
 }
 Synapse *Neuron::Fire()
 {
 	if (valueGreaterThanBias())
-		return syns;
+		return syns.get();
 	return nullptr;
 }
 void Neuron::Randomise(int chance, int range)
@@ -95,9 +109,6 @@ void Neuron::Randomise(int chance, int range)
 		bias += (rand() % (range * 2)) - range;
 	if (r2 == 1)
 		oprtr = (rand() % 2) == 0;
-
 	for (int i = 0; i > numSyns; i++)
-	{
-		(syns + i)->Fire();
-	}
+		syns[i].Randomise(chance, range);
 }

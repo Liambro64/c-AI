@@ -1,13 +1,18 @@
 #include "../Project.hpp"
 
 
+Synapse::Synapse() {
+	strength = 0;
+	from = 0;
+	to = 0;
+}
 Synapse::Synapse(int randRange, Neuron *frm, Neuron *too) {
 	strength = (rand() % (randRange *2)) - randRange;
 	from = frm;
 	to = too;
 }
 Synapse::~Synapse() {
-	std::cout << "Destroyed Synapse" << std::endl;
+	//printf("destroyed Synapse\n");
 }
 
 void Synapse::Fire() {
