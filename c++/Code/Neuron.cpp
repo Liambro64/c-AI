@@ -33,12 +33,17 @@ Neuron::~Neuron() {
 	syns.reset();
 }
 
+//intital randomisation
 void Neuron::InitRandomise(int range) {
 	
 	this->bias = (rand() % (range * 2)) - range;
 	this->oprtr = (rand() % 2) == 0;
 }
 
+
+//add a single synapse. this should not be used
+//as it has to move all the synapses to a new
+//pointer and location in memory for one.
 Synapse *Neuron::addSynapse(Synapse *syn)
 {
 	std::unique_ptr<Synapse[]> ret(new Synapse[numSyns + 1]);
@@ -54,7 +59,8 @@ Synapse *Neuron::addSynapse(Synapse *syn)
 	
 	return syns.get();
 }
-
+//a lot more efficient than adding a single synapse,
+//but pretty much the same implementation.
 Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 {
 	std::unique_ptr<Synapse[]> ret(new Synapse[numSyns + size]);
@@ -71,23 +77,27 @@ Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 	return syns.get();
 }
 
+//make a single synapse, again, probably not good to use
 Synapse *Neuron::MakeSynapse(Neuron *to, int randRange)
 {
 	return addSynapse(new Synapse(randRange, this, to));
 }
+//just better than adding a single synapse.
 Synapse *Neuron::MakeSynapses(Neuron **tos, int amount, int randRange)
 {
-	std::unique_ptr<Synapse[]> nSyns(new Synapse[amount]);
+	std::shared_ptr<Synapse[]> nSyns(new Synapse[amount]);
 	for (int i = 0; i < amount; i++) {
 		nSyns[i] = Synapse(randRange, this, tos[i]);
 	}
 	return addSynapses(nSyns.get(), amount);
 }
 
+//for running the network
 bool Neuron::valueGreaterThanBias()
 {
 	return oprtr ? bias > val : bias < val;
 }
+//fire the neuron's synapses unconditionally
 void Neuron::FireNow()
 {
 	for (int i = 0; i < numSyns; i++)
@@ -95,12 +105,17 @@ void Neuron::FireNow()
 		syns[i].Fire();
 	}
 }
+//why doesnt this fire the synapses?
+//because im working on cuda functions that allow
+//my gpu to do the addition work and copy the gpu
+//memory (almost) straight into the neurons.
 Synapse *Neuron::Fire()
 {
 	if (valueGreaterThanBias())
 		return syns.get();
 	return nullptr;
 }
+//randomise for learning
 void Neuron::Randomise(int chance, int range)
 {
 	int r1 = rand() % chance;

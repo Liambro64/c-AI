@@ -15,7 +15,7 @@ private:
 public:
 	Synapse();
 	Synapse(int randRange, Neuron *frm, Neuron *too);
-	~Synapse();
+	~Synapse() {};
 
 	//accessors
 	int getStrength()	{ return strength; 	}

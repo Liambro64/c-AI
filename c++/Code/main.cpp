@@ -4,7 +4,7 @@
 #include <chrono>
 
 bool DEBUG() {
-    //if true prints staged of creation/deletion
+    //if true prints stages of creation/deletion
     //otherwise doesnt
     return true;
 }
@@ -33,7 +33,11 @@ void SingleBigTimeTest() {
 }
 
 int main(int argc, char **argv) {
+    //initialise random
+    srand(time(0));
+    //test time for making 25 networks of 100, 1000, 100
     TimeTest(100, 1000, 100, 25);
+    //just look at the name and the function lol
     SingleBigTimeTest();
     return 0;
 }

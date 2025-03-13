@@ -1,6 +1,7 @@
 #include "../Project.hpp"
 
-
+//the synapse is a pretty basic implementation,
+//and I feel shouldnt take much explaining.
 Synapse::Synapse() {
 	strength = 0;
 	from = 0;
@@ -10,9 +11,6 @@ Synapse::Synapse(int randRange, Neuron *frm, Neuron *too) {
 	strength = (rand() % (randRange *2)) - randRange;
 	from = frm;
 	to = too;
-}
-Synapse::~Synapse() {
-	//printf("destroyed Synapse\n");
 }
 
 void Synapse::Fire() {

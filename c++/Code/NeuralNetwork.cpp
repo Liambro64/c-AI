@@ -53,6 +53,10 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 
 }
 
+NeuralNetwork::NeuralNetwork(NeuralNetwork *n) {
+	//implement based on network n and randomise
+}
+
 void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, int repeats, int RandRange, int RandChance) {
 	int NeuronsMade = 0;
 	if (outSyns <= 0)
@@ -91,41 +95,14 @@ void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, i
 	if (DEBUG())
 		printf("Made Network\n");
 }
-//network based constructor
-// NeuralNetwork::NeuralNetwork(NeuralNetwork *n)
-// {
-// 	// setting
-// 	outSyns = n->outSyns;
-// 	randRange = n->randRange;
-// 	randChance = n->randChance;
-// 	inputs = n->inputs;
-// 	neurons = n->neurons;
-// 	outputs = n->outputs;
-// 	// doing
-// 	Inputs = (Neuron *)calloc(inputs, sizeof(Neuron));
-// 	for (int i = 0; i < inputs; i++)
-// 	{
-// 		*(Inputs + i) = *new Neuron(randRange, i);
-// 	}
-// 	Neurons = (Neuron *)calloc(neurons, sizeof(Neuron));
-// 	for (int i = 0; i < neurons; i++)
-// 	{
-// 		*(Neurons + i) = *new Neuron(randRange, inputs + i);
-// 	}
-// 	Outputs = (Neuron *)calloc(outputs, sizeof(Neuron));
-// 	for (int i = 0; i < outputs; i++)
-// 	{
-// 		*(Outputs + i) = *new Neuron(randRange, inputs + neurons + i);
-// 	}
-// 	allUsableNeurons = (Neuron **)calloc(2, sizeof(Neuron *));
-// 	*(allUsableNeurons) = Neurons;
-// 	*(allUsableNeurons + 1) = Outputs;
-// }
+//destructor
 NeuralNetwork::~NeuralNetwork() {
 	Inputs.reset();
 	Neurons.reset();
 	Outputs.reset();
 }
+
+//create the synapses for the neurons, the "middle" neurons have a max of maxSyns
 int NeuralNetwork::CreateSynapses(int maxSyns) {
 	int numCreated = 0;
 
@@ -192,14 +169,14 @@ int NeuralNetwork::CreateSynapses(int maxSyns) {
 	return numCreated;
 }
 
-void NeuralNetwork::DestroyNeurons() {
-}
+//check if neuron n is in neuron ns
 bool NeuralNetwork::hasNeuron(Neuron **ns, int size, Neuron *n) {
 	for (int i = 0; i < size; i++)
 		if (*(ns + i) == n)
 			return true;
 	return false;
 }
+//get a neuron from somewhere within the network
 Neuron *NeuralNetwork::getNeuron(int a, int b)
 {
 	if (a == 0)
@@ -210,6 +187,8 @@ Neuron *NeuralNetwork::getNeuron(int a, int b)
 		return &(Outputs[b]);
 	return nullptr;
 }
+
+//get all the synapses that fire, for later running
 Synapse **NeuralNetwork::getFiringSynapses(int *lengthOut) {
 	*lengthOut = 0;
 	Synapse **Syns = (Synapse **)calloc(neurons, sizeof(Synapse *));
@@ -220,7 +199,8 @@ Synapse **NeuralNetwork::getFiringSynapses(int *lengthOut) {
 	}
 	return Syns;
 }
-//running this type of network requires the middle
+
+//running this type of network "requires" the middle
 //layer to be run multiple times, but I want to
 //implement a "tracking" way of doing this
 //where instead I keep track of the synapses
@@ -246,6 +226,10 @@ int *NeuralNetwork::Run(int *input) {
 	//call fire on neurons, return output neuron's val
 }
 
+
+//randomise, for networks based off other networks.
+//this should include adding/deleting synapses,
+//randomising synapse strength, and neuron bias.
 void NeuralNetwork::Randomise() {
-	//r
+	//code here <3
 }
