@@ -3,10 +3,12 @@
 
 #include <chrono>
 
+bool debug = false;
 bool DEBUG() {
     //if true prints stages of creation/deletion
-    //otherwise doesnt
-    return true;
+    //otherwise doesnt, is a variable so I can change
+    //it at runtime.
+    return debug;
 }
 
 void TimeTest(int ins, int middles, int outs, int amount) {
@@ -35,9 +37,9 @@ void SingleBigTimeTest() {
 int main(int argc, char **argv) {
     //initialise random
     srand(time(0));
-    //test time for making 25 networks of 100, 1000, 100
-    TimeTest(100, 1000, 100, 25);
+    //test time for making 25 networks of 16, 64, 5
+    TimeTest(16, 64, 5, 25);
     //just look at the name and the function lol
-    SingleBigTimeTest();
+    //SingleBigTimeTest();
     return 0;
 }

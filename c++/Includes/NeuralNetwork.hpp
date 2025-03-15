@@ -12,6 +12,7 @@ private:
 	std::unique_ptr<Neuron[]> Inputs	{};
 	std::unique_ptr<Neuron[]> Neurons	{};
 	std::unique_ptr<Neuron[]> Outputs	{};
+	std::unique_ptr<bool[]>firingNeurons{};
 public:
 	int randRange 		{};
 	int randChance		{};
@@ -36,7 +37,9 @@ public:
 	bool *Run();
 	bool hasNeuron(Neuron **ns, int size, Neuron *n);
 	int *Run(int *);
-	Synapse **getFiringSynapses(int *lengthOut);
+	void getFiringNeurons();
+	int **getSynStrengths();
+	int getNeuronIndex(Neuron *n);
 
 	void Randomise();
 	

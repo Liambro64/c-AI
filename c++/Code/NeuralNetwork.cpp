@@ -16,6 +16,7 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 	outputs = outs;
 
 
+	firingNeurons = (std::unique_ptr<bool[]>)new bool[neurons];
 	//create the input layer
 	Inputs = (std::unique_ptr<Neuron[]>)(new Neuron[inputs]);
 	if (DEBUG())
@@ -24,6 +25,7 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 		Inputs[i].InitRandomise(randRange);
 	if (DEBUG())
 	printf("Randomised Inputs\n", inputs);
+
 
 	//create the middle layer, normally this would be multiple smaller
 	//layers, but this is one big interconnected "ball" of neurons,
@@ -100,6 +102,7 @@ NeuralNetwork::~NeuralNetwork() {
 	Inputs.reset();
 	Neurons.reset();
 	Outputs.reset();
+	firingNeurons.reset();
 }
 
 //create the synapses for the neurons, the "middle" neurons have a max of maxSyns
@@ -188,16 +191,13 @@ Neuron *NeuralNetwork::getNeuron(int a, int b)
 	return nullptr;
 }
 
-//get all the synapses that fire, for later running
-Synapse **NeuralNetwork::getFiringSynapses(int *lengthOut) {
-	*lengthOut = 0;
-	Synapse **Syns = (Synapse **)calloc(neurons, sizeof(Synapse *));
-	for (int i = 0; i < neurons; i++) {
-		Synapse *a = Neurons[i].Fire();
-		if (a != nullptr)
-			*(Syns + ((*lengthOut)++)) = a;
-	}
-	return Syns;
+//set the values of firingNeurons to the neuron's ValGreaterThanBias
+void NeuralNetwork::getFiringNeurons() {
+	int i = 0;
+	for (i = 0; i < inputs; i++)
+		firingNeurons[i] = Inputs[i].valueGreaterThanBias();
+	for (int j = 0; j < neurons; j++)
+		firingNeurons[j + i] = Neurons[j].valueGreaterThanBias();
 }
 
 //running this type of network "requires" the middle
@@ -208,17 +208,55 @@ Synapse **NeuralNetwork::getFiringSynapses(int *lengthOut) {
 //that are connected to the firing synapses.
 bool *NeuralNetwork::Run()
 {
-	//call fire on neurons, return output neuron's valueGreaterThanBias
-	bool *vgtb = (bool *)calloc(outputs, sizeof(bool));
-	for (int i = 0; i < inputs; i++) {
-		Inputs[i].FireNow();
-	}
-	int *vals = (int *)calloc(neurons, sizeof(int));
-	for (int i = 0; i < midRepeats; i++) {
-		
-	}
+	//gets the bool value of the neurons
+	getFiringNeurons();
+	//gets the strength of the synapses sorted
+	//by their "to" value, this is for gpu
+	//parallel computing.
+	std::unique_ptr<int *[]> synStrengths(getSynStrengths());
+	//here, I need to add CUDA functions, and after this
+	//I will be unable to test networks running on my laptop
+	//which does not have a gpu.
 }
-
+int NeuralNetwork::getNeuronIndex(Neuron *n) {
+	Neuron *ns = Neurons.get();
+	for (int i = 0; i < neurons; i++)
+		if (ns + i == n)
+			return i;
+	ns = Outputs.get();
+	for (int i = 0; i < outputs; i++)
+		if (ns + i == n)
+			return i + neurons;
+	return -1;
+}
+int **NeuralNetwork::getSynStrengths() {
+	int totalUNs = neurons+outputs;
+	int **synStrengths  = (int **)calloc(totalUNs, sizeof(int *));
+	int *indexAmout = (int *)calloc(totalUNs, sizeof(int));
+	int *iter = (int *)calloc(totalUNs, sizeof(int));
+	for (int i = 0; i < totalUNs; i++) {
+		if (firingNeurons[i] == false)
+			continue;
+		Neuron *n = getNeuron(i / neurons, i % neurons);
+		Synapse *syns = n->getSynapses();
+		for (int j = 0; j < n->getNumSyns(); j++)
+			indexAmout[getNeuronIndex(syns[j].getTo())]++;
+	}
+	for (int i = 0; i < totalUNs; i++) {
+		synStrengths[i] = (int *)calloc(indexAmout[i] + 1, sizeof(int));
+		if (synStrengths[i][0] == 0)
+			synStrengths[i][0] = indexAmout[i];
+		Neuron *n = getNeuron(i / neurons, i % neurons);
+		Synapse *syns = n->getSynapses();
+		for (int j = 0; j < n->getNumSyns(); j++) {
+			int toIndex = getNeuronIndex(syns[i].getTo());
+			synStrengths[toIndex][(iter[toIndex]++) + 1] = syns[j].getStrength();
+		}
+	}
+	free(indexAmout);
+	free(iter);
+	return synStrengths;
+}
 int *NeuralNetwork::Run(int *input) {
 	for (int i = 0; i < inputs; i++) {
 		Inputs[i].set(*(input + i));

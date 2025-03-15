@@ -1,4 +1,4 @@
-gcc=g++ -g
+gcc=g++
 dgcc=g++ -gdwarf-2
 rm=del
 srcf=Code/

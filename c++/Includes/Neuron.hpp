@@ -28,6 +28,7 @@ public:
 	//basic functions
     int const getBias() const { return bias; }
     Synapse * const getSynapses() const { return syns.get(); }
+	int const getNumSyns() const {return numSyns;} 
     bool const getOperator() const { return oprtr; }
 
 	Synapse *addSynapse(Synapse* syn);
@@ -36,7 +37,7 @@ public:
 	
 	//network functions
 	Synapse *Fire();
-	void	FireNow();
+	Synapse	*FireNow();
 	Synapse *MakeSynapses(Neuron **tos, int amount, int randRange);
 	Synapse *MakeSynapse(Neuron *to, int randRange);
 	void InitRandomise(int range);

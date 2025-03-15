@@ -98,12 +98,13 @@ bool Neuron::valueGreaterThanBias()
 	return oprtr ? bias > val : bias < val;
 }
 //fire the neuron's synapses unconditionally
-void Neuron::FireNow()
+Synapse *Neuron::FireNow()
 {
 	for (int i = 0; i < numSyns; i++)
 	{
 		syns[i].Fire();
 	}
+	return syns.get();
 }
 //why doesnt this fire the synapses?
 //because im working on cuda functions that allow
@@ -111,9 +112,7 @@ void Neuron::FireNow()
 //memory (almost) straight into the neurons.
 Synapse *Neuron::Fire()
 {
-	if (valueGreaterThanBias())
-		return syns.get();
-	return nullptr;
+	return syns.get();
 }
 //randomise for learning
 void Neuron::Randomise(int chance, int range)
