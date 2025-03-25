@@ -35,9 +35,12 @@ public:
 	void Init(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
 
 	bool *Run();
+	bool *RunCPU();
 	bool hasNeuron(Neuron **ns, int size, Neuron *n);
+	int *RunCPU(int *);
 	int *Run(int *);
 	void getFiringNeurons();
+	void getFiringNeuronsFromPossibleNeurons(bool *);
 	int **getSynStrengths();
 	int getNeuronIndex(Neuron *n);
 

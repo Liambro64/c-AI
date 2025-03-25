@@ -36,9 +36,10 @@ void SingleBigTimeTest() {
 
 int main(int argc, char **argv) {
     //initialise random
+    debug = true;
     srand(time(0));
     //test time for making 25 networks of 16, 64, 5
-    TimeTest(16, 64, 5, 25);
+    TimeTest(100, 1000, 50, 1);
     //just look at the name and the function lol
     //SingleBigTimeTest();
     return 0;

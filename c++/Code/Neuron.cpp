@@ -35,7 +35,6 @@ Neuron::~Neuron() {
 
 //intital randomisation
 void Neuron::InitRandomise(int range) {
-	
 	this->bias = (rand() % (range * 2)) - range;
 	this->oprtr = (rand() % 2) == 0;
 }
