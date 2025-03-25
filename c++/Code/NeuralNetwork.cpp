@@ -206,6 +206,17 @@ void NeuralNetwork::getFiringNeurons() {
 //where instead I keep track of the synapses
 //that fire, and then only check neurons
 //that are connected to the firing synapses.
+int	*NeuralNetwork::RunCPU(int *a) {
+	//gets the bool value of the neurons
+	getFiringNeurons();
+	//gets the strength of the synapses sorted
+	//by their "to" value, this is for gpu
+	//parallel computing.
+	std::unique_ptr<int *[]> synStrengths(getSynStrengths());
+	
+
+}
+
 bool *NeuralNetwork::Run()
 {
 	//gets the bool value of the neurons
