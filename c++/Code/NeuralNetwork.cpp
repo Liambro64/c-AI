@@ -24,7 +24,7 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 	for (int i = 0; i < inputs; i++)
 		Inputs[i].InitRandomise(randRange);
 	if (DEBUG())
-	printf("Randomised Inputs\n", inputs);
+	printf("Randomised Inputs\n");
 
 
 	//create the middle layer, normally this would be multiple smaller
@@ -38,7 +38,7 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 	for (int i = 0; i < neurons; i++)
 		Neurons[i].InitRandomise(randRange);
 	if (DEBUG())
-	printf("Randomised Neurons\n", neurons);
+	printf("Randomised Neurons\n");
 
 	//create the output layer
 	Outputs = (std::unique_ptr<Neuron[]>)(new Neuron[outputs]);
@@ -48,7 +48,7 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 		Outputs[i].InitRandomise(randRange);
 		
 	if (DEBUG())
-	printf("Randomised Outputs\n", neurons);
+	printf("Randomised Outputs\n");
 	CreateSynapses(maxSyns);
 	if (DEBUG())
 	printf("Created Network\n");

@@ -6,13 +6,15 @@ objf=Objs/
 objs=Neuron.o Synapse.o NeuralNetwork.o HelpFuncs.o
 dobjs=HelpFuncs.o Neuron.o Synapse.o NeuralNetwork.o
 main=main.cpp
+name=a
+ext=.out
 
 
 all: $(objs)
-	$(gcc) $(objf)*.o $(srcf)$(main) -o a.exe
+	$(gcc) $(objf)*.o $(srcf)$(main) -o $(name)$(ext)
 
 debug: dbgObjs
-	$(dgcc) $(objf)*.o $(srcf)$(main) -o dbug.exe
+	$(dgcc) $(objf)*.o $(srcf)$(main) -o dbug$(ext)
 
 dbgObjs:
 	$(dgcc) -c $(srcf)Neuron.cpp		-o $(objf)Neuron.o
