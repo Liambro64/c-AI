@@ -23,8 +23,6 @@ public:
     Neuron(int randRange, int index);
 	~Neuron();
 
-    void print();
-
 	//basic functions
     int const getBias() const { return bias; }
     Synapse * const getSynapses() const { return syns.get(); }

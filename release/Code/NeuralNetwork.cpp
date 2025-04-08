@@ -18,10 +18,9 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 	firingNeurons = (std::unique_ptr<bool[]>)new bool[neurons];
 	// create the input layer
 	Inputs = (std::unique_ptr<Neuron[]>)(new Neuron[inputs]);
-	print("Made %i Inputs\n", inputs);
+	("Made %i Inputs\n", inputs);
 	for (int i = 0; i < inputs; i++)
 		Inputs[i].InitRandomise(randRange);
-	print("Randomised Inputs\n", inputs);
 
 	// create the middle layer, normally this would be multiple smaller
 	// layers, but this is one big interconnected "ball" of neurons,
@@ -29,20 +28,15 @@ NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyn
 	// why? because I want to see if it works. I will make a basic
 	// implementation and test both and test the efficiency.
 	Neurons = (std::unique_ptr<Neuron[]>)(new Neuron[neurons]);
-	print("Made %i Neurons\n", neurons);
 	for (int i = 0; i < neurons; i++)
 		Neurons[i].InitRandomise(randRange);
-	print("Randomised Neurons\n", neurons);
 
 	// create the output layer
 	Outputs = (std::unique_ptr<Neuron[]>)(new Neuron[outputs]);
-	print("Made %i Outputs\n", outputs);
 	for (int i = 0; i < outputs; i++)
 		Outputs[i].InitRandomise(randRange);
 
-	print("Randomised Outputs\n", neurons);
 	CreateSynapses(maxSyns);
-	print("Created Network\n");
 }
 
 NeuralNetwork::NeuralNetwork(NeuralNetwork *n)
@@ -83,10 +77,7 @@ void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, i
 		Outputs[i].InitRandomise(randRange);
 	NeuronsMade += outputs;
 	firingNeurons = (std::unique_ptr<bool[]>)(new bool[inputs + neurons]);
-	print("Made %i Neurons\n", NeuronsMade);
 	CreateSynapses(maxSyns);
-	if (DEBUG())
-		print("Made Network\n");
 }
 // destructor
 NeuralNetwork::~NeuralNetwork()
@@ -172,7 +163,6 @@ int NeuralNetwork::CreateSynapses(int maxSyns)
 		numCreated += numSyns;
 	}
 	tryFree(nss);
-	print("Created %i Synapses\n", numCreated);
 	return numCreated;
 }
 
@@ -274,7 +264,6 @@ int *NeuralNetwork::RunCPU(int *input, int repeats)
 	int *ret = (int *)calloc(outputs, sizeof(int));
 	if (!ret)
 	{
-		print("Memory allocation failed for outputs\n");
 		return nullptr;
 	}
 

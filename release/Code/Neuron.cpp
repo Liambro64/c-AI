@@ -10,7 +10,7 @@ Neuron::Neuron() {
 
 Neuron::Neuron(int Bias, bool Oprtr)
 {
-	//printf("Creating Neuron With Basic Constructor\n");
+	//f("Creating Neuron With Basic Constructor\n");
 	this->bias = bias;
 	this->oprtr = Oprtr;
 	this->numSyns = 0;

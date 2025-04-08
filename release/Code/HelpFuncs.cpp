@@ -8,10 +8,3 @@ bool tryFree(void *ptr) {
     }
     return true;
 }
-
-const void print(char *format, ...) {
-    va_list lst;
-    va_start(lst, format);  
-    if (DEBUG())
-        vprintf(format, lst);
-}
