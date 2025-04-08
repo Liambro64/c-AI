@@ -30,6 +30,28 @@ public:
 	~NeuralNetwork();
 	void DestroyNeurons();
 
+	int getRandRange() { return randRange; }
+	int setRandRange(int range) { randRange = range; return randRange; }
+	int getRandChance() { return randChance; }
+	int setRandChance(int chance) { randChance = chance; return randChance; }
+	int getMidRepeats() { return midRepeats; }
+	int setMidRepeats(int repeats) { midRepeats = repeats; return midRepeats; }
+	int getInputs() { return inputs; }
+	int setInputs(int ins) { inputs = ins; return inputs; }
+	int getNeurons() { return neurons; }
+	int setNeurons(int mid) { neurons = mid; return neurons; }
+	int getOutputs() { return outputs; }
+	int setOutputs(int out) { outputs = out; return outputs; }
+	int getUsableNeurons() { return usableNeurons; }
+	int setUsableNeurons(int usable) { usableNeurons = usable; return usableNeurons; }
+	int getOutSyns() { return outSyns; }
+	int setOutSyns(int out) { outSyns = out; return outSyns; }
+
+	Neuron *GetInputs() { return Inputs.get(); }
+	Neuron *GetNeurons() { return Neurons.get(); }
+	Neuron *GetOutputs() { return Outputs.get(); }
+
+
 	Neuron *getNeuron(int a, int b);
 	int		CreateSynapses(int maxSyns);
 	void Init(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);

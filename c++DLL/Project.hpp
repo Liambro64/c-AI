@@ -17,7 +17,10 @@
 # define uniqueptr std::unique_ptr
 # define sharedptr std::shared_ptr
 # define rn std::chrono::high_resolution_clock::now
-
+# define e extern
+# define c "C"
+# define dll __declspec(dllexport)
 bool tryFree(void *ptr);
+const void print(char *format, ...);
 
 #endif

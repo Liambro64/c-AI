@@ -126,3 +126,43 @@ void Neuron::Randomise(int chance, int range)
 	for (int i = 0; i > numSyns; i++)
 		syns[i].Randomise(chance, range);
 }
+e c __declspec(dllexport) int GetNeuronBias(Neuron *n)
+{
+	if (n != nullptr)
+	{
+		return n->getBias();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetNeuronVal(Neuron *n)
+{
+	if (n != nullptr)
+	{
+		return n->getVal();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetNeuronNumSyns(Neuron *n)
+{
+	if (n != nullptr)
+	{
+		return n->getNumSyns();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetNeuronOperator(Neuron *n)
+{
+	if (n != nullptr)
+	{
+		return n->getOperator();
+	}
+	return 0;
+}
+e c __declspec(dllexport) Synapse *GetNeuronSynapses(Neuron *n)
+{
+	if (n != nullptr)
+	{
+		return n->getSynapses();
+	}
+	return nullptr;
+}

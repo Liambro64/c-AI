@@ -8,12 +8,13 @@ objs=Neuron.o Synapse.o NeuralNetwork.o HelpFuncs.o
 dobjs=HelpFuncs.o Neuron.o Synapse.o NeuralNetwork.o
 main=main.cpp
 bin=Bin/
+name=NeuralNetwork.dll
 
 dll: $(objs)
-	$(dgcc) -shared -o $(bin)NeuralNetwork.dll $(objf)*.o
+	$(gcc) -shared -o $(bin)$(name) $(addprefix $(objf),$(objs))
 
 debugdll: $(dobjs)
-	$(dgcc) -shared -o $(bin)DBG_NeuralNetwork.dll $(objf)*.o
+	$(dgcc) -shared -o $(bin)DBG_$(name) $(addprefix $(objf),$(dobjs))
 
 dbgObjs: 
 	$(dgcc) -c $(srcf)Neuron.cpp		-o $(objf)Neuron.o
@@ -22,8 +23,15 @@ dbgObjs:
 	$(dgcc) -c $(srcf)HelpFuncs.cpp		-o $(objf)HelpFuncs.o
 
 $(objs): %.o: $(srcf)%.cpp
-	$(gcc) -c $^ -o $(objf)$@
+	$(gcc) -c -DBUILD_DLL $^ -o $(objf)$@
+
+test:
+	$(gcc) -o $(bin)a.exe $(srcf)$(main) -L$(bin) -lNeuralNetwork -Wl,--enable-auto-import
+
+rbtest: dll
+	$(gcc) -o $(bin)a.exe $(srcf)$(main) -L$(bin) -lNeuralNetwork -Wl,--enable-auto-import
 
 fclean:
 	$(rm) a.exe
 	$(rm) "Objs/*.o"
+	del $(bin)*.dll

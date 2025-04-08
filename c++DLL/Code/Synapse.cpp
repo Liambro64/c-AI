@@ -21,3 +21,18 @@ void Synapse::Randomise(int chance, int range) {
 	if ((rand() % chance) == 1)
 		strength += (rand() % (range * 2)) - range;
 }
+e c __declspec(dllexport) int GetSynapseStrength(Synapse *s) {
+	if (s != nullptr)
+		return s->getStrength();
+	return 0;
+}
+e c __declspec(dllexport) Neuron *GetSynapseFrom(Synapse *s) {
+	if (s != nullptr)
+		return s->getFrom();
+	return nullptr;
+}
+e c __declspec(dllexport) Neuron *GetSynapseTo(Synapse *s) {
+	if (s != nullptr)
+		return s->getTo();
+	return nullptr;
+}

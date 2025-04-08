@@ -390,3 +390,121 @@ void NeuralNetwork::Randomise()
 {
 	// code here <3
 }
+
+e c __declspec(dllexport) NeuralNetwork *CreateNetwork(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+{
+	return new NeuralNetwork(ins, mid, out, maxSyns, outSyns, repeats, RandRange, RandChance);
+}
+
+e c __declspec(dllexport) NeuralNetwork *CreateCleanNetwork()
+{
+	return new NeuralNetwork();
+}
+
+e c __declspec(dllexport) void DestroyNetwork(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		delete net;
+	}
+}
+e c __declspec(dllexport) void Init(NeuralNetwork *net, int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+{
+	if (net != nullptr)
+	{
+		net->Init(ins, mid, out, maxSyns, outSyns, repeats, RandRange, RandChance);
+	}
+}
+e c __declspec(dllexport) int *Run(NeuralNetwork *net, int *input, int repeats = -1)
+{
+	if (net != nullptr)
+	{
+		if (repeats = -1)
+			repeats = net->midRepeats;
+		return net->RunCPU(input, repeats);
+	}
+	return nullptr;
+}
+
+e c __declspec(dllexport) Neuron *GetNeurons(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->GetNeurons();
+	}
+	return nullptr;
+}
+e c __declspec(dllexport) Neuron *GetInputs(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->GetInputs();
+	}
+	return nullptr;
+}
+e c __declspec(dllexport) Neuron *GetOutputs(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->GetOutputs();
+	}
+	return nullptr;
+}
+e c __declspec(dllexport) int GetInputsSize(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getInputs();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetOutputsSize(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getOutputs();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetNeuronsSize(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getNeurons();
+	}
+	return 0;
+}
+
+e c __declspec(dllexport) int GetUsableNeurons(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getUsableNeurons();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetOutSyns(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getOutSyns();
+	}
+	return 0;
+}
+
+e c __declspec(dllexport) int GetRandRange(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getRandRange();
+	}
+	return 0;
+}
+e c __declspec(dllexport) int GetRandChance(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getRandChance();
+	}
+	return 0;
+}
