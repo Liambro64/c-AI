@@ -126,8 +126,11 @@ int NeuralNetwork::CreateSynapses(int maxSyns) {
 		free(ns);
 		numCreated += synapseAmount;
 	}
+	if(DEBUG())
+		printf("Made Input Synapses");
+	
 	//adding synapses between neurons, also making
-	//sure they dont double up E.G Neuron A has
+	//sure they dont double up E.G Neuron A hasx
 	//connection to Neuron B in >1 synapses,
 	//but "backtracing" is allowed, E.G A and B have
 	//1 synapse from a->b and 1 from b->a
@@ -145,6 +148,8 @@ int NeuralNetwork::CreateSynapses(int maxSyns) {
 		free(ns);
 		numCreated += synapseAmount;
 	}
+	if(DEBUG())
+		printf("Made Neuron Synapses");
 	//This adds up to (outputs) synapses to
 	//outSyns neurons from the middle layer,
 	//also stops synapse doubling
@@ -212,7 +217,7 @@ int	*NeuralNetwork::RunCPU(int *a) {
 	//gets the strength of the synapses sorted
 	//by their "to" value, this is for gpu
 	//parallel computing.
-	std::unique_ptr<int *[]> synStrengths(getSynStrengths());
+	int **syns = getSynStrengths();
 	
 
 }
@@ -226,7 +231,7 @@ bool *NeuralNetwork::Run()
 	//parallel computing.
 	std::unique_ptr<int *[]> synStrengths(getSynStrengths());
 	//here, I need to add CUDA functions, and after this
-	//I will be unable to test networks running on my laptop
+	//I will be unable to test networks running in parallel on my laptop
 	//which does not have a gpu.
 }
 int NeuralNetwork::getNeuronIndex(Neuron *n) {
@@ -248,7 +253,7 @@ int **NeuralNetwork::getSynStrengths() {
 	for (int i = 0; i < totalUNs; i++) {
 		if (firingNeurons[i] == false)
 			continue;
-		Neuron *n = getNeuron(i / neurons, i % neurons);
+		Neuron *n = getNeuron(i / inputs >= 1 ? 1 : 0,  i / inputs >= 1 ? i - inputs : i);
 		Synapse *syns = n->getSynapses();
 		for (int j = 0; j < n->getNumSyns(); j++)
 			indexAmout[getNeuronIndex(syns[j].getTo())]++;
@@ -257,7 +262,7 @@ int **NeuralNetwork::getSynStrengths() {
 		synStrengths[i] = (int *)calloc(indexAmout[i] + 1, sizeof(int));
 		if (synStrengths[i][0] == 0)
 			synStrengths[i][0] = indexAmout[i];
-		Neuron *n = getNeuron(i / neurons, i % neurons);
+		Neuron *n = getNeuron(i / inputs >= 1 ? 1 : 0,  i / inputs >= 1 ? i - inputs : i);
 		Synapse *syns = n->getSynapses();
 		for (int j = 0; j < n->getNumSyns(); j++) {
 			int toIndex = getNeuronIndex(syns[i].getTo());

@@ -24,10 +24,9 @@ void TimeTest(int ins, int middles, int outs, int amount) {
     networks.reset();
 }
 
-void SingleBigTimeTest() {
+void SingleBigTimeTest(int in, int mid, int out) {
     auto start = std::chrono::high_resolution_clock::now();
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork());
-    network.get()->Init(1000, 10000, 1000);
+    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork(in, mid, out));
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     printf("Made 1 Neural Network of size (1000, 10000, 1000) in %f seconds\n", diff);
@@ -36,11 +35,11 @@ void SingleBigTimeTest() {
 
 int main(int argc, char **argv) {
     //initialise random
-    debug = true;
     srand(time(0));
+    debug = true;
     //test time for making 25 networks of 16, 64, 5
-    TimeTest(100, 1000, 50, 1);
+    //TimeTest(100, 1000, 50, 1);
     //just look at the name and the function lol
-    //SingleBigTimeTest();
+    SingleBigTimeTest(100, 1000, 100);
     return 0;
 }

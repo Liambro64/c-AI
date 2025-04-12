@@ -10,6 +10,7 @@ needed funcs:
 Finding GPU:
 copy:  gpuGetMaxGflopsDeviceIdDRV() in https://github.com/NVIDIA/cuda-samples/blob/master/Common/helper_cuda_drvapi.h#L197 
 combine: findCudaDeviceDRV with (infile)Line 3
+
 compile to cuda in
 copy: compileFileToCUBIN in https://github.com/NVIDIA/cuda-samples/blob/master/Common/nvrtc_helper.h#L50 
 
