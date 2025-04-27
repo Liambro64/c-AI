@@ -4,19 +4,24 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <iostream>
+# include <vector>
 # include <time.h>
 # include <math.h>
-# include <stdlib.h>
 # include <string.h>
+# include <stdarg.h>
 # include <memory>
 
 # include "Includes/Neuron.hpp"
 # include "Includes/Synapse.hpp"
 # include "Includes/NeuralNetwork.hpp"
+# define uniqueptr std::unique_ptr
+# define sharedptr std::shared_ptr
+# define rn std::chrono::high_resolution_clock::now
 
-void print(char *);
 bool tryFree(void *ptr);
 
 bool DEBUG();
+
+const void print(char *format, ...);
 
 #endif

@@ -12,6 +12,11 @@ Synapse::Synapse(int randRange, Neuron *frm, Neuron *too) {
 	from = frm;
 	to = too;
 }
+Synapse::Synapse(Neuron *frm, Neuron *too, int str) {
+	strength = str;
+	from = frm;
+	to = too;
+}
 
 void Synapse::Fire() {
 	to->add(strength);

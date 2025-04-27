@@ -10,7 +10,7 @@ Neuron::Neuron() {
 
 Neuron::Neuron(int Bias, bool Oprtr)
 {
-	//printf("Creating Neuron With Basic Constructor\n");
+	//f("Creating Neuron With Basic Constructor\n");
 	this->bias = bias;
 	this->oprtr = Oprtr;
 	this->numSyns = 0;
@@ -27,18 +27,18 @@ Neuron::Neuron(int randRange)
 	this->syns = nullptr;
 }
 
-Neuron::~Neuron() {
-	if (numSyns == 0)
-		return;
+Neuron::~Neuron()
+{
+	// Ensure unique_ptr automatically cleans up memory
 	syns.reset();
 }
+
 
 //intital randomisation
 void Neuron::InitRandomise(int range) {
 	this->bias = (rand() % (range * 2)) - range;
 	this->oprtr = (rand() % 2) == 0;
 }
-
 
 //add a single synapse. this should not be used
 //as it has to move all the synapses to a new
@@ -62,6 +62,8 @@ Synapse *Neuron::addSynapse(Synapse *syn)
 //but pretty much the same implementation.
 Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 {
+	if (numSyns < 0)
+		numSyns = 0;
 	std::unique_ptr<Synapse[]> ret(new Synapse[numSyns + size]);
 	int i = 0;
 	if (numSyns != 0)
@@ -69,8 +71,8 @@ Synapse *Neuron::addSynapses(Synapse *Syns, int size)
 		for (i = 0; i < numSyns; i++)
 			ret[i] = syns[i];
 	}
-	for (int j = 0; j < size; i++, j++)
-		ret[i] = Syns[i];
+	for (int j = 0; j < size; j++)
+		ret[i + j] = Syns[j];
 	numSyns += size;
 	syns.reset(ret.release());
 	return syns.get();
@@ -114,7 +116,7 @@ Synapse *Neuron::Fire()
 	return syns.get();
 }
 //randomise for learning
-void Neuron::Randomise(int chance, int range)
+void Neuron::Randomise(int chance, int range, bool synapses, Neuron *layer, int size, int synapseChance)
 {
 	int r1 = rand() % chance;
 	int r2 = rand() % chance;
@@ -122,6 +124,44 @@ void Neuron::Randomise(int chance, int range)
 		bias += (rand() % (range * 2)) - range;
 	if (r2 == 1)
 		oprtr = (rand() % 2) == 0;
+	if (!synapses)
+		return;
+	RandomiseSynapses(synapseChance, chance, layer, size);
 	for (int i = 0; i > numSyns; i++)
 		syns[i].Randomise(chance, range);
+}
+
+/// @brief Randomise the synapses of this neuron.
+/// @details This function will randomise the synapses of this neuron, including deleting, adding and randomising of values.
+/// @param changeChance the chance of a change event.
+/// @param chance the chance of a randomisation event.
+/// @param range 
+/// @return how many synapses were added
+int Neuron::RandomiseSynapses(int changeChance, int chance, Neuron *layer, int size)
+{
+	int s = 0;
+	if (rand() % chance != 1 || numSyns == 0)
+		return 0;
+	for (int i = 0; i < numSyns; i++)
+	{
+		int val = rand() % changeChance;
+		if (val == 0)
+		{
+			syns[i].~Synapse();
+			numSyns--;
+			for (int j = i; j < numSyns - i; j++)
+				syns[j] = syns[j + 1];
+			i--;
+			s--;
+		}
+	}
+	for (int i = 0; i < size; i++) {
+		int val = rand() % changeChance;
+		if (val == 0 && layer + i != this)
+		{
+			MakeSynapse(layer + i, numSyns);
+			s++;
+		}
+	}
+	return s;
 }
