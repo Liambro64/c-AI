@@ -22,16 +22,19 @@ public:
 	int outputs			{};
 	int usableNeurons	{};
 	int outSyns			{};
+	int Chance 			{};
 
 
 	NeuralNetwork();
-	NeuralNetwork(int ins, int mid, int out, int maxSyns = -1, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
+	NeuralNetwork(int ins, int mid, int out, int maxSyns = -1, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100);
 	NeuralNetwork(NeuralNetwork *network);
 	~NeuralNetwork();
 	NeuralNetwork *Clone();
 	void DestroyNeurons();
 
 	int getRandRange() { return randRange; }
+	int getChance() { return Chance; }
+	int setChance(int chance) { Chance = chance; return Chance; }
 	int setRandRange(int range) { randRange = range; return randRange; }
 	int getRandChance() { return randChance; }
 	int setRandChance(int chance) { randChance = chance; return randChance; }
@@ -55,7 +58,7 @@ public:
 
 	Neuron *getNeuron(int a, int b);
 	int		CreateSynapses(int maxSyns = -1);
-	void Init(int ins, int mid, int out, int maxSyns = -1, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
+	void Init(int ins, int mid, int out, int maxSyns = -1, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100);
 	void SRand();
 
 	int	findNeuron(Neuron *n);
@@ -73,8 +76,8 @@ public:
 	bool *LayerCheck(Neuron *layer, int length);
 	void printSynapses(char *filter = "none");
 
-	void Randomise();
-	
+	void Randomise(int Chance1, int chance2, int chance3);
+	void EzRandomise();
 };
 
 

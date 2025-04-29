@@ -2,7 +2,6 @@
 #include "../Project.hpp"
 
 #include <chrono>
-
 bool debug = false;
 bool DEBUG()
 {

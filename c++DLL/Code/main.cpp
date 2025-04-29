@@ -98,12 +98,16 @@ void CloneTest(int ins, int mids, int outs) {
     network.reset();
     clone.reset();
 }
-void RandomiseTest(int ins, int mids, int outs) {
+void RandomiseTest(int ins, int mids, int outs, int repeats) {
     std::unique_ptr<NeuralNetwork> network(new NeuralNetwork);
     network->Init(ins, mids, outs);
+    network->Chance = 20;
     print("Network created\n");
-    network->Randomise();
-    print("Network Randomised\n");
+    for (int i = 0; i < repeats; i++)
+    {
+        network->EzRandomise();
+    }
+    print("Network Randomised %i times\n", repeats);
     network.reset();
 }
 void CurrentLiamTest()
@@ -125,11 +129,7 @@ void CurrentLiamTest()
     // just look at the name and the function lol
     // SingleBigTimeTest();
     CloneTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize);
+    RandomiseTest(inSize, midSize, outSize, 5);
 }
 
 int main(int argc, char **argv)

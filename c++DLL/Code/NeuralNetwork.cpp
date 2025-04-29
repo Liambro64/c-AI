@@ -2,9 +2,9 @@
 NeuralNetwork::NeuralNetwork()
 {
 }
-NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyns, int repeats, int RandRange, int RandChance)
+NeuralNetwork::NeuralNetwork(int ins, int mid, int outs, int maxSyns, int outSyns, int repeats, int RandRange, int RandChance, int Chance)
 {
-	Init(ins, mid, outs, maxSyns, outSyns, repeats, RandRange, RandChance);
+	Init(ins, mid, outs, maxSyns, outSyns, repeats, RandRange, RandChance, Chance);
 }
 NeuralNetwork::NeuralNetwork(NeuralNetwork *network)
 {
@@ -42,7 +42,7 @@ NeuralNetwork::NeuralNetwork(NeuralNetwork *network)
 			Neurons[i].addSynapse(new Synapse(network->Neurons[i].getSynapses()[j].getStrength(), Neurons.get() + i, too));
 		}
 	}
-	Randomise();
+	Randomise(Chance + (Chance / 4), Chance, Chance - (Chance / 4));
 }
 NeuralNetwork *NeuralNetwork::Clone()
 {
@@ -82,7 +82,7 @@ NeuralNetwork *NeuralNetwork::Clone()
 	}
 	return &clone;
 }
-void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, int repeats, int RandRange, int RandChance)
+void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, int repeats, int RandRange, int RandChance, int Chance)
 {
 	int NeuronsMade = 0;
 	if (outSyns <= 0)
@@ -94,6 +94,8 @@ void NeuralNetwork::Init(int ins, int mid, int outs, int maxSyns, int outSyns, i
 	inputs = ins;
 	neurons = mid;
 	outputs = outs;
+
+	this->Chance = Chance;
 
 	// create the input layer
 	Inputs = (std::unique_ptr<Neuron[]>)(new Neuron[inputs]);
@@ -495,25 +497,28 @@ int *NeuralNetwork::Run(int *input)
 // randomise, for networks based off other networks.
 // this should include adding/deleting synapses,
 // randomising synapse strength, and neuron bias.
-void NeuralNetwork::Randomise()
+void NeuralNetwork::Randomise(int Chance1, int chance2, int chance3)
 {
 	// code here <3
 	for (int i = 0; i < inputs; i++)
 	{
-		Inputs[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, 2500);
+		Inputs[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, Chance1);
 	}
 	for (int i = 0; i < neurons; i++)
 	{
-		Neurons[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, 2000);
-		Neurons[i].RandomiseSynapses(1750, randChance, Neurons.get(), neurons);
+		Neurons[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, chance2);
+		Neurons[i].RandomiseSynapses(chance3, randChance, Neurons.get(), neurons);
 	}
 	for (int i = 0; i < outputs; i++)
 	{
 		Outputs[i].Randomise(randChance, randRange, false, 0, 0, 0);
 	}
 }
-
-fdll NeuralNetwork *CreateNetwork(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+void NeuralNetwork::EzRandomise()
+{
+	Randomise(Chance + (Chance / 4), Chance, Chance - (Chance / 4));
+}
+fdll NeuralNetwork *CreateNetwork(int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100)
 {
 	return new NeuralNetwork(ins, mid, out, maxSyns, outSyns, repeats, RandRange, RandChance);
 }
@@ -535,8 +540,25 @@ fdll void RandomiseNetwork(NeuralNetwork *net)
 {
 	if (net != nullptr)
 	{
-		net->Randomise();
+		int Chance = net->getChance();
+		net->Randomise(Chance + (Chance / 4), Chance, Chance - (Chance / 4));
 	}
+}
+fdll int getChance(NeuralNetwork *net)
+{
+	if (net != nullptr)
+	{
+		return net->getChance();
+	}
+	return 0;
+}
+fdll int setChance(NeuralNetwork *net, int chance)
+{
+	if (net != nullptr)
+	{
+		return net->setChance(chance);
+	}
+	return 0;
 }
 fdll void DestroyNetwork(NeuralNetwork *net)
 {
@@ -545,7 +567,7 @@ fdll void DestroyNetwork(NeuralNetwork *net)
 		delete net;
 	}
 }
-fdll void Init(NeuralNetwork *net, int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+fdll void Init(NeuralNetwork *net, int ins, int mid, int out, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100)
 {
 	if (net != nullptr)
 	{

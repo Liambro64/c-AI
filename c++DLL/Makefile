@@ -12,6 +12,7 @@ name=NeuralNetwork.dll
 dllBuild = null
 extension = .exe
 link=blah
+copy=cp
 ifeq ($(OS),Windows_NT)
     dllBuild = -DBUILD_DLL
 	extension = .exe
@@ -19,6 +20,7 @@ ifeq ($(OS),Windows_NT)
 	srcf=Code\\
 	objf=Objs\\
 	bin=Bin\\
+	copy=copy
 	link=-L$(bin) -lNeuralNetwork
 else
     UNAME_S := $(shell uname -s)
@@ -29,6 +31,7 @@ else
 		srcf=Code/
 		objf=Objs/
 		bin=Bin/
+		copy=cp
 		link=$(bin)$(name)
     endif
     ifeq ($(UNAME_S),Darwin)
@@ -81,6 +84,8 @@ test: dll
 
 runtest : test
 	$(bin)test$(extension)
+makenpush : dll
+	$(copy) $(bin)$(name) "C:\\Users\\Cooke\\Coding Projects\\UnityCameraIntegration\\C++AI Visualiser\\Assets\\Scripts\\NetworkWrapper\\NeuralNetwork.dll"
 
 fclean:
 	$(rm) $(objf)*.o
