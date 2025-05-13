@@ -507,7 +507,7 @@ void NeuralNetwork::Randomise(int Chance1, int chance2, int chance3)
 	for (int i = 0; i < neurons; i++)
 	{
 		Neurons[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, chance2);
-		Neurons[i].RandomiseSynapses(chance3, randChance, Neurons.get(), neurons);
+		Neurons[i].RandomiseSynapses(chance3, randChance, randRange, Neurons.get(), neurons);
 	}
 	for (int i = 0; i < outputs; i++)
 	{

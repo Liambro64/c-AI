@@ -1,25 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
-void TestFunc()
-{
-    NeuralNetwork net = new(5, 25, 5);
-    Console.WriteLine($"Inputs: {net.inputs}");
-    Console.WriteLine($"Neurons: {net.neurons}");
-    Console.WriteLine($"Outputs: {net.outputs}");
-    //past this is just DLL declarations
-    //this is the class that wraps the DLL
-    int[] input = new int[net.inputs];
-    for (int i = 0; i < net.inputs; i++)
-    {
-        input[i] = Random.Shared.Next(-25, 26);
-    }
-    int[] result = net.Run(input);
-    Console.WriteLine($"Input: {string.Join(", ", input)}");
-    Console.WriteLine($"Output: {string.Join(", ", result)}");
-}
-TestFunc();
 public class NeuralNetwork
 {
     private IntPtr _networkPtr;
@@ -35,6 +18,30 @@ public class NeuralNetwork
     {
         get { return GetOutputsSize(_networkPtr); }
     }
+    public Neuron[] Neurons {
+        get => GetNeurons();
+    }
+    public Neuron[] Inputs {
+        get => GetInputs();
+    }
+    public Neuron[] Outputs {
+        get => GetOutputs();
+    }
+    ~NeuralNetwork()
+    {
+        DestroyNetwork(_networkPtr);
+    }
+    public int GetNeuronIndex(Neuron neuron)
+    {
+        return GetNeuronIndex(_networkPtr, neuron.ptr);
+    }
+    public int chance
+    {
+        get { return getChance(_networkPtr); }
+        set { setChance(_networkPtr, value); }
+    }
+
+
     public int usableNeurons
     {
         get { return GetUsableNeurons(_networkPtr); }
@@ -55,13 +62,17 @@ public class NeuralNetwork
     {
         _networkPtr = CreateCleanNetwork();
     }
-    public NeuralNetwork(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+    public NeuralNetwork(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100)
     {
-        _networkPtr = CreateNetwork(ins, mid, out_, maxSyns, outSyns, repeats, RandRange, RandChance);
+        _networkPtr = CreateNetwork(ins, mid, out_, maxSyns, outSyns, repeats, RandRange, RandChance, Chance);
     }
-    public void Init(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100)
+    NeuralNetwork(IntPtr networkPtr)
     {
-        Init(_networkPtr, ins, mid, out_, maxSyns, outSyns, repeats, RandRange, RandChance);
+        _networkPtr = networkPtr;
+    }
+    public void Init(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100)
+    {
+        Init(_networkPtr, ins, mid, out_, maxSyns, outSyns, repeats, RandRange, RandChance, Chance);
     }
     public int[] Run(int[] input, int repeats = -1)
     {
@@ -76,81 +87,128 @@ public class NeuralNetwork
         Neuron[] Inputs = new Neuron[inputs];
         for (int i = 0; i < inputs; i++)
         {
-            Inputs[i] = new Neuron(inputsPtr + (i * Marshal.SizeOf(typeof(Neuron))));
+            Inputs[i] = new Neuron(inputsPtr + (i * Neuron.Size));
         }
         return Inputs;
     }
     public Neuron[] GetOutputs()
     {
         IntPtr outputsPtr = GetOutputs(_networkPtr);
-        Neuron[] Inputs = new Neuron[inputs];
-        for (int i = 0; i < inputs; i++)
+        Neuron[] Outputs = new Neuron[outputs];
+        for (int i = 0; i < outputs; i++)
         {
-            Inputs[i] = new Neuron(outputsPtr + (i * Marshal.SizeOf(typeof(Neuron))));
+            Outputs[i] = new Neuron(outputsPtr + (i * Neuron.Size));
         }
-        return Inputs;
+        return Outputs;
     }
     public Neuron[] GetNeurons()
     {
         IntPtr neuronsPtr = GetNeurons(_networkPtr);
-        Neuron[] Inputs = new Neuron[inputs];
-        for (int i = 0; i < inputs; i++)
+        Neuron[] Neurons = new Neuron[neurons];
+        for (int i = 0; i < neurons; i++)
         {
-            Inputs[i] = new Neuron(neuronsPtr + (i * Marshal.SizeOf(typeof(Neuron))));
+            Neurons[i] = new Neuron(neuronsPtr + (i * Neuron.Size));
         }
-        return Inputs;
+        return Neurons;
+    }
+    public void srand()
+    {
+        sRand(_networkPtr);
     }
 
+    public int GetIndex(Neuron to) {
+        for (int i = 0; i < inputs; i++) {
+            if (to.ptr == Inputs[i].ptr) {
+                return i;
+            }
+        }
+        for (int i = 0; i < neurons; i++) {
+            if (to.ptr == Neurons[i].ptr) {
+                return i + inputs;
+            }
+        }
+        for (int i = 0; i < outputs; i++) {
+            if (to.ptr == Outputs[i].ptr) {
+                return i + inputs + neurons;
+            }
+        }
+        return -1;
+    }
+    public NeuralNetwork Clone()
+    {
+        return new NeuralNetwork(CloneNetwork(_networkPtr));
+    }
+    public void Randomise()
+    {
+        RandomiseNetwork(_networkPtr);
+    }
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr CreateNetwork(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
+    [DllImport("NeuralNetwork")]
+    private static extern IntPtr CreateNetwork(int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern IntPtr CreateCleanNetwork();
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern void DestroyNetwork(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void Init(IntPtr net, int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100);
+    [DllImport("NeuralNetwork")]
+    private static extern void Init(IntPtr net, int ins, int mid, int out_, int maxSyns = 15, int outSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern IntPtr Run(IntPtr net, int[] input, int repeats = -1);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern IntPtr GetNeurons(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern IntPtr GetInputs(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern IntPtr GetOutputs(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetInputsSize(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetOutputsSize(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetNeuronsSize(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetUsableNeurons(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetOutSyns(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetRandRange(IntPtr net);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     private static extern int GetRandChance(IntPtr net);
+    [DllImport("NeuralNetwork")]
+    private static extern int getChance(IntPtr net);
+    [DllImport("NeuralNetwork")]
+    private static extern int setChance(IntPtr net, int range);
+
+    [DllImport("NeuralNetwork")]
+    private static extern int GetNeuronIndex(IntPtr net, IntPtr n);
+    [DllImport("NeuralNetwork")]
+    private static extern void sRand(IntPtr net);
+    [DllImport("NeuralNetwork")]
+    private static extern IntPtr CloneNetwork(IntPtr net);
+    [DllImport("NeuralNetwork")]
+    private static extern void RandomiseNetwork(IntPtr net);
 }
 
 public class Neuron
 {
     private IntPtr _neuronPtr;
+    public const int Size = 24;
+    public IntPtr ptr {
+        get { return _neuronPtr; }
+    }
     public int bias
     {
         get { return GetNeuronBias(_neuronPtr); }
@@ -175,7 +233,7 @@ public class Neuron
             Synapse[] synapses = new Synapse[numSyns];
             for (int i = 0; i < numSyns; i++)
             {
-                synapses[i] = new Synapse(synapsesPtr + (i * Marshal.SizeOf(typeof(Synapse))));
+                synapses[i] = new Synapse(synapsesPtr + (i * Synapse.Size));
             }
             return synapses;
         }
@@ -188,26 +246,26 @@ public class Neuron
     {
         _neuronPtr = neuron;
     }
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern IntPtr GetNeuronSynapses(IntPtr Neuron);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern int GetNeuronNumSyns(IntPtr Neuron);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern int GetNeuronBias(IntPtr neuron);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern int GetNeuronVal(IntPtr neuron);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern bool GetNeuronOperator(IntPtr neuron);
 }
 
 public class Synapse
 {
     private IntPtr _synapsePtr;
-
+    public const int Size = 24;
     public Synapse(IntPtr synapsePtr)
     {
         _synapsePtr = synapsePtr;
@@ -229,12 +287,12 @@ public class Synapse
         _synapsePtr = value;
     }
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern int GetSynapseStrength(IntPtr synapse);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern IntPtr GetSynapseFrom(IntPtr synapse);
 
-    [DllImport("NeuralNetwork.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("NeuralNetwork")]
     public static extern IntPtr GetSynapseTo(IntPtr synapse);
 }

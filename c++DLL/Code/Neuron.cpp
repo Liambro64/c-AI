@@ -11,7 +11,7 @@ Neuron::Neuron() {
 Neuron::Neuron(int Bias, bool Oprtr)
 {
 	//f("Creating Neuron With Basic Constructor\n");
-	this->bias = bias;
+	this->bias = Bias; // Was: this->bias = bias;
 	this->oprtr = Oprtr;
 	this->numSyns = 0;
 	this->val = 0;
@@ -126,8 +126,8 @@ void Neuron::Randomise(int chance, int range, bool synapses, Neuron *layer, int 
 		oprtr = (rand() % 2) == 0;
 	if (!synapses)
 		return;
-	RandomiseSynapses(synapseChance, chance, layer, size);
-	for (int i = 0; i > numSyns; i++)
+	RandomiseSynapses(synapseChance, chance, range, layer, size); // Pass 'range' as randRange
+	for (int i = 0; i < numSyns; i++) // Changed > to <
 		syns[i].Randomise(chance, range);
 }
 
@@ -135,9 +135,9 @@ void Neuron::Randomise(int chance, int range, bool synapses, Neuron *layer, int 
 /// @details This function will randomise the synapses of this neuron, including deleting, adding and randomising of values.
 /// @param changeChance the chance of a change event.
 /// @param chance the chance of a randomisation event.
-/// @param range 
+/// @param randRange The range for randomizing new synapse strengths.
 /// @return how many synapses were added
-int Neuron::RandomiseSynapses(int changeChance, int chance, Neuron *layer, int size)
+int Neuron::RandomiseSynapses(int changeChance, int chance, int randRange, Neuron *layer, int size)
 {
 	int s = 0;
 	if (rand() % chance != 1 || numSyns == 0)
@@ -159,7 +159,7 @@ int Neuron::RandomiseSynapses(int changeChance, int chance, Neuron *layer, int s
 		int val = rand() % changeChance;
 		if (val == 0 && layer + i != this)
 		{
-			MakeSynapse(layer + i, numSyns);
+			MakeSynapse(layer + i, randRange); // Use passed randRange
 			s++;
 		}
 	}

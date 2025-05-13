@@ -43,7 +43,7 @@ public:
 	Synapse *MakeSynapse(Neuron *to, int randRange);
 	void InitRandomise(int range);
 	void Randomise(int chance, int range, bool synapses,  Neuron *layer, int size, int synapseChance);
-	int	 RandomiseSynapses(int ChangeChance, int chance, Neuron *layer, int size);
+	int	 RandomiseSynapses(int ChangeChance, int chance, int randRange, Neuron *layer, int size);
 
 	//operators
 	void const add(int a) {
