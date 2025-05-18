@@ -9,7 +9,11 @@
 # include <math.h>
 # include <string.h>
 # include <stdarg.h>
+# include <cuda.h>
+# include <cuda_runtime.h>
+# include <bits/stdc++.h>
 # include <memory>
+# include "Includes/HelperFuncs.hpp"
 # include "Includes/CudaFuncs.cuh"
 # include "Includes/Neuron.hpp"
 # include "Includes/Synapse.hpp"

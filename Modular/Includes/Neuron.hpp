@@ -48,8 +48,8 @@ public:
 	void MakeSynapses(Neuron **tos, int amount, int randRange); // Implementation will change
 	void MakeSynapse(Neuron *to, int randRange); // Implementation will change
 	void InitRandomise(int range);
-	void Randomise(int chance, int range, bool synapses,  Neuron *layer, int size, int synapseChance);
-	int	 RandomiseSynapses(int ChangeChance, int chance, int randRange, Neuron *layer, int size);
+	void Randomise(int chance, int range, bool synapses,  std::vector<Neuron> *layer, int synapseChance);
+	int	 RandomiseSynapses(int ChangeChance, int chance, int randRange, std::vector<Neuron> *layer);
 	void ApplyBiasDecay(); // New method for decay
 
 	//operators

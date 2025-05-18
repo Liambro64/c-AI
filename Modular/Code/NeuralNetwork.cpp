@@ -1,214 +1,388 @@
 #include "../Project.hpp"
-#include <numeric> // For std::iota if needed later
-#include <algorithm> // For std::find_if
+#include <numeric>
+#include <algorithm>
 #include <stdarg.h>
+#include <iostream> // For potential error messages
 
-NeuralNetwork::NeuralNetwork() : inputs(0), outputs(0) {
-    // Initialize default values if necessary
-    randRange = 5;
-    randChance = 100;
-    midRepeats = 4;
-    Chance = 100;
+NeuralNetwork::NeuralNetwork() : inputs(0), outputs(0)
+{
+    // Default constructor creates an empty network, Init should be called later
 }
 
-// A more detailed constructor might take configurations for packets
-NeuralNetwork::NeuralNetwork(int systemInputs, int systemOutputs, const std::vector<std::string, std::vector<int>>& packetIds)
-    : inputs(systemInputs), outputs(systemOutputs) {
-    randRange = 5; // Default values
-    randChance = 100;
-    midRepeats = 4;
-    Chance = 100;
-	//todo: implement packet creation based on packetIds
-	// Create inter packet synapses 
+// Constructor now takes NetworkConfig
+NeuralNetwork::NeuralNetwork(const NetworkConfig &config)
+{
+    Init(config); // Delegate initialization to Init
 }
 
-NeuralNetwork::NeuralNetwork(NeuralNetwork *network) {
+NeuralNetwork::NeuralNetwork(NeuralNetwork *network)
+{
     // Deep copy constructor
     this->inputs = network->inputs;
     this->outputs = network->outputs;
-    this->randRange = network->randRange;
-    this->randChance = network->randChance;
-    this->midRepeats = network->midRepeats;
-    this->Chance = network->Chance;
+    // Global params like randRange, etc. are less relevant now, packets have their own.
+    // If NetworkConfig had global overrides, they'd be copied here.
 
-    for (const auto& packet_ptr : network->packets) {
-        if (packet_ptr) {
-            this->packets.push_back(std::unique_ptr<Packet>(packet_ptr->Clone()));
+    for (int i = 0; i < network->packets.size(); i++)
+    {
+        Packet *packet_ptr = &network->packets[i];
+        // Use unique_ptr to manage memory automatically
+        // This assumes Packet has a proper copy constructor or Clone method
+        // If Clone is not implemented, we need to implement it in Packet class
+        if (packet_ptr)
+        {
+            // Packet::Clone needs to correctly deep copy internal and inter-packet synapses
+            // This is still a TODO in Packet::Clone
+            this->packets.push_back(new Packet(packet_ptr->Clone()));
         }
     }
+    // TODO: After cloning packets, inter-packet synapses also need to be cloned and re-mapped
+    // This is part of the complex deep copy process.
 }
 
-NeuralNetwork::~NeuralNetwork() {
+NeuralNetwork::~NeuralNetwork()
+{
     // unique_ptr will handle deallocation of Packets
     packets.clear();
 }
 
-NeuralNetwork *NeuralNetwork::Clone() {
+NeuralNetwork *NeuralNetwork::Clone()
+{
     return new NeuralNetwork(this); // Use the copy constructor
 }
 
-void NeuralNetwork::AddPacket(std::unique_ptr<Packet> packet) {
-    if (packet) {
-        packets.push_back(std::move(packet));
+void NeuralNetwork::AddPacket(Packet *packet)
+{
+    if (packet)
+    {
+        packets.push_back(packet);
     }
 }
 
-Packet* NeuralNetwork::GetPacket(const std::string& packetId) {
-    auto it = std::find_if(packets.begin(), packets.end(), 
-                           [&](const std::unique_ptr<Packet>& p) {
-                               return p && p->GetId() == packetId;
+Packet *NeuralNetwork::GetPacket(const std::string &packetId)
+{
+    auto it = std::find_if(packets.begin(), packets.end(),
+                           [&](Packet p)
+                           {
+                               return &p != nullptr && p.GetId() == packetId;
                            });
-    if (it != packets.end()) {
-        return it->get();
+    if (it != packets.end())
+    {
+        return it.base(); // Return the raw pointer
     }
     return nullptr;
 }
 
-void NeuralNetwork::Init(int systemInputs, int systemOutputs /*, packet configurations */) {
-    this->inputs = systemInputs;
-    this->outputs = systemOutputs;
+void NeuralNetwork::Init(const NetworkConfig &config)
+{
+    this->inputs = config.systemInputs;
+    this->outputs = config.systemOutputs;
     this->packets.clear(); // Clear any existing packets
+    this->randChance=config.globalRandChance;
+    this->randRange=config.globalRandRange;
+    this->midRepeats=config.globalRepeats;
+    this->Chance=config.globalChance;
+    this->packetCount = config.packetConfigs.size();
+    packets.resize(packetCount);
+    // 1. Create Packets based on configuration
+    for (int i = 0; i < packetCount; i++)
+    {
+        auto pkt_config = config.packetConfigs[i];
+        this->packets[i].Init(pkt_config.id,
+                pkt_config.inputs,
+                pkt_config.neurons,
+                pkt_config.outputs,
+                pkt_config.commOutputs,
+                -1,                    // maxSyns (use packet default or add to config)
+                0,                     // outSyns (use packet default or add to config)
+                0,                     // commOutSyns (use packet default or add to config)
+                pkt_config.repeats,    // Use packet-specific repeats
+                pkt_config.randRange,  // Use packet-specific randRange
+                pkt_config.randChance, // Use packet-specific randChance
+                pkt_config.SynChance      // Use packet-specific Chance
+        );
+    }
 
-    // TODO: Implement logic to create and configure packets based on system needs
-    // This is highly dependent on how you want to structure the network of packets.
-    // Example: Create a simple "vision" packet and a "motor" packet.
-    // This requires defining how system inputs map to packet inputs and packet outputs to system outputs.
+    // 2. Create Inter-Packet Synapses based on configuration
+    CreateNetwork(config);
 
-    // Placeholder:
-    // auto vision_packet = std::make_unique<Packet>("vision_pkt", systemInputs, 50, 10, -1, 0, midRepeats, randRange, randChance, Chance);
-    // AddPacket(std::move(vision_packet));
-    // auto motor_packet = std::make_unique<Packet>("motor_pkt", 10, 30, systemOutputs, -1, 0, midRepeats, randRange, randChance, Chance);
-    // AddPacket(std::move(motor_packet));
 }
 
-void NeuralNetwork::SRand() {
+void NeuralNetwork::CreateNetwork(const NetworkConfig &config)
+{
+    Inputs.clear();
+    Inputs.reserve(inputs);
+    for (int i = 0; i < this->inputs; i++)
+    {
+        Inputs.push_back(Neuron(randRange));
+    }
+    Outputs.clear();
+    Outputs.reserve(outputs);
+    for (int i = 0; i < outputs; i++)
+    {
+        Outputs.push_back(Neuron());
+    }
+    int pktInCount = 0;
+    std::vector<int> pktIns;
+    std::vector<int> pktOuts;
+    int pktOutCount = 0;
+    pktIns.reserve(packets.size());
+    pktOuts.reserve(packets.size());
+    for (int i = 0; i < packets.size(); i++)
+    {
+        pktInCount += packets[i].getInputs();
+        pktIns[i] = packets[i].getInputs();
+        pktOutCount += packets[i].getOutputs();
+        pktOuts[i] = packets[i].getOutputs();
+    }
+    int rt = (int)sqrtl(pktInCount);
+    int rt4 = (rt / 4) + 1;
+    for (int i = 0; i < inputs; i++)
+    {
+        std::vector<Neuron *> neurons;
+        int syns = rt4 + (rand() % (rt - rt4));
+        if (syns > 0)
+        {
+            for (int j = 0; j < syns; j++)
+            {
+                Neuron *n = nullptr;
+                while (n == nullptr)
+                {
+                    int r = rand() % pktInCount;
+                    int ins = packets[0].getInputs();
+                    for (int k = 0; k < packets.size(); k++)
+                    {
+                        if (r < ins)
+                        {
+                            n = packets[k].getNeuron(0, r);
+                            break;
+                        }
+                        r -= ins;
+                        if (k < packets.size() - 1)
+                            ins = packets[k + 1].getInputs();
+                    }
+                    if (std::find(neurons.begin(), neurons.end(), n) == neurons.end())
+                        neurons.push_back(n);
+                    else 
+                        n = nullptr; // Avoid duplicates
+                }
+            }
+            Inputs[i].MakeSynapses(neurons.data(), neurons.size(), randRange);
+        }
+    }
+    for (int i = 0; i < outputs; i++)
+    {
+        std::vector<Neuron *> neurons;
+        int rt = (int)sqrtl(pktOutCount);
+        int rt4 = (rt / 4) + 1;
+        int syns = rt4 + (rand() % (rt - rt4));
+        if (syns > 0)
+        {
+            for (int j = 0; j < syns; j++)
+            {
+                Neuron *n = nullptr;
+                while (n == nullptr)
+                {
+                    int r = rand() % pktOutCount;
+                    int outs = packets[0].getOutputs();
+                    for (int k = 0; k < packets.size(); k++)
+                    {
+                        if (r < outs)
+                        {
+                            n = packets[k].getNeuron(2, r);
+                            break;
+                        }
+                        r -= outs;
+                        if (k < packets.size() - 1)
+                            outs = packets[k + 1].getOutputs();
+                    }
+                    if (std::find(neurons.begin(), neurons.end(), n) == neurons.end())
+                        neurons.push_back(n);
+                    else 
+                        n = nullptr; // Avoid duplicates
+                }
+            }
+        }
+        for (int j = 0; j < neurons.size(); j++)
+        {
+            neurons[j]->MakeSynapse(&Outputs[i], randRange);
+        }
+    }
+}
+
+//UNUSED, AI ADDED IT FOR NO REASON AND I AM YET TO IMPLEMENT PROPERLY
+void NeuralNetwork::CreateInterPacketSynapses(const NetworkConfig &config)
+{
+    // Iterate through each defined inter-packet connection
+    for (const auto &conn_config : config.interPacketConnections)
+    {
+        Packet *sourcePacket = GetPacket(conn_config.sourcePacketId);
+        Packet *targetPacket = GetPacket(conn_config.targetPacketId);
+
+        if (!sourcePacket)
+        {
+            std::cerr << "Warning: Source packet '" << conn_config.sourcePacketId << "' not found for connection." << std::endl;
+            continue;
+        }
+        if (!targetPacket)
+        {
+            std::cerr << "Warning: Target packet '" << conn_config.targetPacketId << "' not found for connection." << std::endl;
+            continue;
+        }
+        if (sourcePacket->getCommOutputsCount() == 0)
+        {
+            std::cerr << "Warning: Source packet '" << conn_config.sourcePacketId << "' has no CommOutputs to connect from." << std::endl;
+            continue;
+        }
+
+        Neuron *sourceCommOutputs = sourcePacket->GetCommOutputs()->data();
+        int numSourceCommOutputs = sourcePacket->getCommOutputsCount();
+
+        Neuron *targetLayer = nullptr;
+        int numTargetNeurons = 0;
+
+        if (conn_config.targetLayerType == 0)
+        { // Target is Inputs layer
+            targetLayer = targetPacket->GetInputs()->data();
+            numTargetNeurons = targetPacket->getInputs();
+        }
+        else if (conn_config.targetLayerType == 1)
+        { // Target is Neurons (middle) layer
+            targetLayer = targetPacket->GetNeurons()->data();
+            numTargetNeurons = targetPacket->getNeurons();
+        }
+        else
+        {
+            std::cerr << "Warning: Invalid targetLayerType (" << conn_config.targetLayerType << ") for connection from '" << conn_config.sourcePacketId << "' to '" << conn_config.targetPacketId << "'." << std::endl;
+            continue;
+        }
+
+        if (numTargetNeurons == 0)
+        {
+            std::cerr << "Warning: Target packet '" << conn_config.targetPacketId << "' has no neurons in the specified target layer (" << conn_config.targetLayerType << ") to connect to." << std::endl;
+            continue;
+        }
+
+        // Create numSynapses connections from random CommOutputs in source to random neurons in target layer
+        int synapsesToCreate = conn_config.numSynapses;
+        if (synapsesToCreate <= 0)
+        {                                                                                     // Default number of synapses if not specified or zero
+            synapsesToCreate = std::max(1, std::min(numSourceCommOutputs, numTargetNeurons)); // Connect at least 1 if possible
+        }
+        // Ensure we don't try to create more synapses than possible unique connections
+        // (numSourceCommOutputs * numTargetNeurons)
+        if (synapsesToCreate > numSourceCommOutputs * numTargetNeurons)
+        {
+            synapsesToCreate = numSourceCommOutputs * numTargetNeurons;
+        }
+
+        // Simple random connection strategy: Pick random source and random target for each synapse
+        for (int i = 0; i < synapsesToCreate; ++i)
+        {
+            Neuron *sourceNeuron = &sourceCommOutputs[rand() % numSourceCommOutputs];
+            Neuron *targetNeuron = &targetLayer[rand() % numTargetNeurons];
+
+            // TODO: Add check to avoid duplicate synapses between the exact same pair of neurons
+            // This requires iterating through sourceNeuron's existing synapses.
+
+            sourceNeuron->MakeSynapse(targetNeuron, config.globalRandRange); // Use global randRange for inter-packet syns
+        }
+        std::cout << "Created " << synapsesToCreate << " inter-packet synapses from '" << sourcePacket->GetId() << "' (CommOutputs) to '" << targetPacket->GetId() << "' (Layer " << conn_config.targetLayerType << ")." << std::endl;
+    }
+}
+
+void NeuralNetwork::SRand()
+{
     srand(time(0)); // Seed globally once
+    // Optionally, if packets have their own SRand that does more, call it:
+    // for (const auto& packet : packets) {
+    //     if (packet) packet->SRand();
+    // }
 }
 
-int *NeuralNetwork::RunCPU(int *systemInputValues, int repeatsOverride) {
-    if (packets.empty()) {
-        // Or handle error appropriately
-        return nullptr; 
+std::vector<int> NeuralNetwork::Run(int *systemInputValues)
+{
+
+    // this should simply push the inputs through their synapses,
+    // because synapses can hold any neuron anywhere.
+    for (int i = 0; i < inputs; i++)
+    {
+        Inputs[i].set(systemInputValues[i]);
+        Inputs[i].FireNow();
     }
 
-    int currentRepeats = (repeatsOverride == -1) ? this->midRepeats : repeatsOverride;
-
-    // --- Stage 1: Distribute System Inputs to Packets ---
-    // This is a placeholder and needs a defined mapping.
-    // Example: First packet takes all system inputs.
-    // More complex scenarios might involve splitting inputs or routing them based on type.
-    if (!packets.empty() && packets[0]) {
-        // Assuming the first packet is the primary input packet for now
-        // And its input size matches systemInputs
-        if (packets[0]->getInputs() > 0 && systemInputValues != nullptr) {
-             // This is a simplified direct mapping.
-             // A real system might need a more sophisticated input distribution.
-             // For now, we'll assume the first packet can take the system inputs.
-             // We are not running the packet yet, just setting its inputs if it's designed to receive them.
-             // The actual running happens in a loop or defined order.
-        }
-    }
     
-    // --- Stage 2: Run Packets (and handle inter-packet communication if designed) ---
-    // For now, run packets sequentially. Inter-packet communication needs explicit design.
-    // Example: Output of packet A becomes input of packet B.
-    
-    // This is a very simplified execution model.
-    // A more robust model would define an execution graph or order for packets.
-    std::map<std::string, std::vector<int>> packetOutputsTemp;
-
-    for (const auto& packet : packets) {
-        if (packet) {
-            // How do we get input for this specific packet?
-            // For now, let's assume systemInputValues are for the first packet,
-            // and other packets might get inputs from previous packets (not implemented here yet)
-            // or have no direct external input for this step.
-            
-            int* currentPacketInput = nullptr;
-            if (packet->GetId() == "vision_pkt" && systemInputValues != nullptr && packet->getInputs() == this->inputs) { // Example condition
-                currentPacketInput = systemInputValues;
-            }
-            // else if (packet->GetId() == "motor_pkt") {
-            //    // Try to get input from vision_pkt's output
-            //    if(packetOutputsTemp.count("vision_pkt")) {
-            //        // This requires packetOutputsTemp["vision_pkt"] to be correctly sized for motor_pkt's input
-            //        // currentPacketInput = packetOutputsTemp["vision_pkt"].data();
-            //    }
-            // }
-
-
-            int* packetResultRaw = packet->RunCPU(currentPacketInput, currentRepeats);
-            
-            if (packetResultRaw) {
-                std::vector<int> resultVec(packet->getOutputs());
-                for(int i=0; i < packet->getOutputs(); ++i) resultVec[i] = packetResultRaw[i];
-                packetOutputsTemp[packet->GetId()] = resultVec;
-                free(packetResultRaw); // Free memory allocated by packet's RunCPU
-            }
-        }
+    std::vector<std::thread> threads;
+    // then it would run the packets (maybe even multiple times, each packet would keep track)
+    for (int i = 0; i < packets.size(); i++)
+    {
+        threads.push_back(std::thread([this, i]()
+        {
+            packets[i].Run();
+        }));
     }
-
-    // --- Stage 3: Gather System Outputs from Packets ---
-    // This also needs a defined mapping.
-    // Example: Last packet's outputs are the system outputs.
-    int *systemOutputValues = (int *)calloc(this->outputs, sizeof(int));
-    if (!systemOutputValues) return nullptr;
-
-    if (!packets.empty()) {
-        // Placeholder: Assume the last packet provides the system output,
-        // or a specific packet is designated as the output packet.
-        // Let's assume a packet named "motor_pkt" (if it exists and was run) provides output.
-        Packet* outputPacket = GetPacket("motor_pkt"); // Example
-        if (!outputPacket && !packets.empty()) outputPacket = packets.back().get(); // Fallback to last packet
-
-        if (outputPacket && packetOutputsTemp.count(outputPacket->GetId())) {
-             const auto& finalPacketOutputData = packetOutputsTemp[outputPacket->GetId()];
-            for (int i = 0; i < this->outputs && i < finalPacketOutputData.size(); ++i) {
-                systemOutputValues[i] = finalPacketOutputData[i];
-            }
-        }
+    // wait for all threads to finish
+    for (int i = 0; i < threads.size(); i++)
+    {
+        std::thread *thread = &threads[i];
+        if (thread->joinable())
+            thread->join();
     }
-    
-    return systemOutputValues;
+    // running the packets should be done in parallel so research multi-threading (done)
+    // run its own RunGPU function (later we could check for cuda support and run GPU if available)
+    // and return the outputs as an array of ints.
+    std::vector<int> outputValues;
+    outputValues.resize(outputs);
+    for (int i = 0; i < outputs; i++)
+    {
+        outputValues[i] = Outputs[i].getVal();
+    }
+    return outputValues;
 }
 
-
-void NeuralNetwork::RandomiseNetwork(int chance1, int chance2, int chance3) {
-    for (const auto& packet : packets) {
-        if (packet) {
-            // Packets now have their own Chance, randChance, randRange.
-            // We could pass these parameters, or let packet use its own.
-            // For now, let packet use its own internal Randomise which uses its members.
-            packet->Randomise(chance1, chance2, chance3); // Or packet->EzRandomise();
+void NeuralNetwork::RandomiseNetwork()
+{
+    for (int i = 0; i < inputs; i++) {
+        Inputs[i].Randomise(randChance, randRange, false, NULL, 0);
+        for (int j = 0; j < packets.size(); j++)
+        {
+            Inputs[i].RandomiseSynapses(Chance, randChance, randRange, packets[j].GetInputs());
+        }
+    }
+    for (int i = 0; i < packets.size(); i++)
+    {
+        packets[i].Randomise(Chance);
+        for (int j = 0; j < packets[i].getOutputs(); j++) {
+            (*packets[i].GetOutputs())[j].RandomiseSynapses(Chance, randChance, randRange, &Outputs);
         }
     }
 }
-
-void NeuralNetwork::EzRandomiseNetwork() {
-     for (const auto& packet : packets) {
-        if (packet) {
-            packet->EzRandomise();
-        }
-    }
+fdll NeuralNetwork *CreateNeuralNetwork(const NetworkConfig &config)
+{
+    return new NeuralNetwork(config);
 }
-
-
-// Removed old C-style interface functions that were specific to the old NeuralNetwork structure.
-// New ones would be needed if this NeuralNetwork class is to be used via a C API.
-// For example:
-// fdll NeuralNetwork* CreateSystemNetwork(int systemInputs, int systemOutputs) {
-//     return new NeuralNetwork(systemInputs, systemOutputs, {}); // Basic initialization
-// }
-// fdll void AddPacketToSystem(NeuralNetwork* systemNet, Packet* packet) {
-//     if(systemNet && packet) {
-//         // NeuralNetwork::AddPacket expects unique_ptr, so this needs careful handling
-//         // systemNet->AddPacket(std::unique_ptr<Packet>(packet)); // This takes ownership, might be problematic if packet is managed elsewhere
-//     }
-// }
-// fdll int* RunSystem(NeuralNetwork* systemNet, int* inputs) {
-//     if(systemNet) return systemNet->RunCPU(inputs);
-//     return nullptr;
-// }
-// fdll void DestroySystemNetwork(NeuralNetwork* systemNet) {
-//     delete systemNet;
-// }
+fdll void DestroyNeuralNetwork(NeuralNetwork *network)
+{
+    delete network;
+}
+fdll void RunNeuralNetwork(NeuralNetwork *network, int *systemInputValues, int *outputValues)
+{
+    std::vector<int> outputs = network->Run(systemInputValues);
+    std::copy(outputs.begin(), outputs.end(), outputValues);
+}
+fdll Packet *GetPacketFromNetwork(NeuralNetwork *network, const char *packetId)
+{
+    return network->GetPacket(packetId);
+}
+fdll Packet *GetPacketFromNetworkByIndex(NeuralNetwork *network, int index)
+{
+    if (index < 0 || index >= network->GetAllPackets().size())
+    {
+        return nullptr; // Out of bounds
+    }
+    return (Packet *)&network->GetAllPackets()[index];
+}
+fdll Packet *GetPackets(NeuralNetwork *network)
+{
+    return (Packet *)((network->GetAllPackets()).data());
+}

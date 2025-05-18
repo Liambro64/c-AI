@@ -1,5 +1,5 @@
 //i will write the cuda functions here
-
+#include "../Project.hpp"
 //this should set to[i] to the sum of from[i]
 //the first integer in from[i] (aka from[i][0])
 //is the size of that array.
@@ -21,4 +21,25 @@ extern "C" __global__ void vectorSum(int *to, int **from, int size) {
             to[idx] = current_sum;
         }
     }
+}
+
+namespace Wrapper{
+
+void VSWrapper(int *to, int **from, int size) {
+    // Define the number of threads and blocks
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+
+    // Launch the kernel
+    vectorSum<<<blocksPerGrid, threadsPerBlock>>>(to, from, size);
+    // Check for errors in kernel launch (optional)
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err));
+    }
+	err = cudaDeviceSynchronize(); // Wait for kernel to complete
+    if (err != cudaSuccess) {
+        fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err));
+    }
+}
 }

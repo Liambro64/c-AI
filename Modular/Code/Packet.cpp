@@ -10,36 +10,39 @@ Packet::Packet(const std::string &id, int ins, int mid, int outs, int commOuts, 
 {
 	Init(id, ins, mid, outs, commOuts, maxSyns, outSyns, commOutSynsParam, repeats, RandRange, RandChance, Chance);
 }
-Packet::Packet(Packet *network)
+Packet::Packet(const Packet &pkt) {
+	
+}
+Packet::Packet(Packet *packet)
 {
 	// copy constructor
-	this->packetId = network->packetId + "_clone"; 
-	this->inputs = network->inputs;
-	this->neurons = network->neurons;
-	this->outputs = network->outputs;
-	this->commOutputs = network->commOutputs; // Copy commOutputs size
-	this->randRange = network->randRange;
-	this->randChance = network->randChance;
-	this->midRepeats = network->midRepeats;
-	this->outSyns = network->outSyns;
-	this->commOutSyns = network->commOutSyns; // Copy commOutSyns
-	this->Chance = network->Chance;
+	this->packetId = packet->packetId + "_clone"; 
+	this->inputs = packet->inputs;
+	this->neurons = packet->neurons;
+	this->outputs = packet->outputs;
+	this->commOutputs = packet->commOutputs; // Copy commOutputs size
+	this->randRange = packet->randRange;
+	this->randChance = packet->randChance;
+	this->midRepeats = packet->midRepeats;
+	this->outSyns = packet->outSyns;
+	this->commOutSyns = packet->commOutSyns; // Copy commOutSyns
+	this->Chance = packet->Chance;
 
-	this->Inputs = std::make_unique<Neuron[]>(inputs);
-	this->Neurons = std::make_unique<Neuron[]>(neurons);
-	this->Outputs = std::make_unique<Neuron[]>(outputs);
-	this->CommOutputs = std::make_unique<Neuron[]>(commOutputs); // Allocate CommOutputs
+	this->Inputs.reserve(inputs);
+	this->Neurons.reserve(neurons);
+	this->Outputs.reserve(outputs);
+	this->CommOutputs.reserve(commOutputs); // Allocate CommOutputs
 
 	for (int i = 0; i < inputs; i++)
 	{
-		Inputs[i].setBias(network->Inputs[i].getBias());
-		Inputs[i].setOperator(network->Inputs[i].getOperator()); // Assuming Neuron::setOperator takes bool or int correctly
+		Inputs[i].setBias(packet->Inputs[i].getBias());
+		Inputs[i].setOperator(packet->Inputs[i].getOperator()); // Assuming Neuron::setOperator takes bool or int correctly
 		// Deep copy synapses for Inputs
-		Synapse* oldSyns = network->Inputs[i].getSynapses();
-		for (int j = 0; j < network->Inputs[i].getNumSyns(); j++) {
+		Synapse* oldSyns = packet->Inputs[i].getSynapses();
+		for (int j = 0; j < packet->Inputs[i].getNumSyns(); j++) {
 			Neuron* targetOriginal = oldSyns[j].getTo();
-			int targetIdxOriginal = network->findNeuron(targetOriginal);
-			Neuron* targetClone = this->getNeuron(targetIdxOriginal / (network->inputs + network->neurons + network->outputs + network->commOutputs), targetIdxOriginal % (network->inputs + network->neurons + network->outputs + network->commOutputs)); // This mapping is complex
+			int targetIdxOriginal = packet->findNeuron(targetOriginal);
+			Neuron* targetClone = this->getNeuron(targetIdxOriginal / (packet->inputs + packet->neurons + packet->outputs + packet->commOutputs), targetIdxOriginal % (packet->inputs + packet->neurons + packet->outputs + packet->commOutputs)); // This mapping is complex
 			// Simplified: find relative index in target layer and use it in clone
             // This needs a robust way to map original target neurons to cloned target neurons.
             // The findNeuron and getNeuron logic needs to be very solid for this.
@@ -49,18 +52,18 @@ Packet::Packet(Packet *network)
 	}
 	for (int i = 0; i < neurons; i++)
 	{
-		Neurons[i].setBias(network->Neurons[i].getBias());
-		Neurons[i].setOperator(network->Neurons[i].getOperator());
+		Neurons[i].setBias(packet->Neurons[i].getBias());
+		Neurons[i].setOperator(packet->Neurons[i].getOperator());
 		// Deep copy synapses for Neurons (to Neurons, Outputs, CommOutputs)
 	}
 	for (int i = 0; i < outputs; i++) {
-        Outputs[i].setBias(network->Outputs[i].getBias());
-        Outputs[i].setOperator(network->Outputs[i].getOperator());
+        Outputs[i].setBias(packet->Outputs[i].getBias());
+        Outputs[i].setOperator(packet->Outputs[i].getOperator());
         // Outputs usually don't have outgoing synapses within the packet
     }
 	for (int i = 0; i < commOutputs; i++) { // Copy CommOutputs neurons
-        CommOutputs[i].setBias(network->CommOutputs[i].getBias());
-        CommOutputs[i].setOperator(network->CommOutputs[i].getOperator());
+        CommOutputs[i].setBias(packet->CommOutputs[i].getBias());
+        CommOutputs[i].setOperator(packet->CommOutputs[i].getOperator());
         // CommOutputs usually don't have outgoing synapses *within* the packet
     }
 	// TODO: Implement robust deep copy of synapses for all layers, mapping to *cloned* target neurons.
@@ -83,10 +86,10 @@ Packet *Packet::Clone()
 	clone->commOutSyns = commOutSyns; // Clone commOutSyns
 	clone->Chance = Chance;
 
-	clone->Inputs = std::make_unique<Neuron[]>(inputs);
-	clone->Neurons = std::make_unique<Neuron[]>(neurons);
-	clone->Outputs = std::make_unique<Neuron[]>(outputs);
-	clone->CommOutputs = std::make_unique<Neuron[]>(commOutputs); // Allocate CommOutputs for clone
+	clone->Inputs.reserve(inputs);
+	clone->Neurons.reserve(neurons);
+	clone->Outputs.reserve(outputs);
+	clone->CommOutputs.reserve(commOutputs); // Allocate CommOutputs for clone
 
 	// Copy neuron properties (bias, operator)
 	for (int i = 0; i < inputs; i++) {
@@ -117,7 +120,60 @@ Packet *Packet::Clone()
 
 	return clone; 
 }
+void Packet::Init(Packet *packet) {
+	
+	// copy constructor
+	this->packetId = packet->packetId + "_clone"; 
+	this->inputs = packet->inputs;
+	this->neurons = packet->neurons;
+	this->outputs = packet->outputs;
+	this->commOutputs = packet->commOutputs; // Copy commOutputs size
+	this->randRange = packet->randRange;
+	this->randChance = packet->randChance;
+	this->midRepeats = packet->midRepeats;
+	this->outSyns = packet->outSyns;
+	this->commOutSyns = packet->commOutSyns; // Copy commOutSyns
+	this->Chance = packet->Chance;
 
+	this->Inputs.reserve(inputs);
+	this->Neurons.reserve(neurons);
+	this->Outputs.reserve(outputs);
+	this->CommOutputs.reserve(commOutputs); // Allocate CommOutputs
+
+	for (int i = 0; i < inputs; i++)
+	{
+		Inputs[i].setBias(packet->Inputs[i].getBias());
+		Inputs[i].setOperator(packet->Inputs[i].getOperator()); // Assuming Neuron::setOperator takes bool or int correctly
+		// Deep copy synapses for Inputs
+		Synapse* oldSyns = packet->Inputs[i].getSynapses();
+		for (int j = 0; j < packet->Inputs[i].getNumSyns(); j++) {
+			Neuron* targetOriginal = oldSyns[j].getTo();
+			int targetIdxOriginal = packet->findNeuron(targetOriginal);
+			Neuron* targetClone = this->getNeuron(targetIdxOriginal / (packet->inputs + packet->neurons + packet->outputs + packet->commOutputs), targetIdxOriginal % (packet->inputs + packet->neurons + packet->outputs + packet->commOutputs)); // This mapping is complex
+			// Simplified: find relative index in target layer and use it in clone
+            // This needs a robust way to map original target neurons to cloned target neurons.
+            // The findNeuron and getNeuron logic needs to be very solid for this.
+            // For now, assuming a simplified mapping or placeholder for deep synapse copy.
+            // Inputs[i].addSynapse(Synapse(Inputs.get() + i, targetClone, oldSyns[j].getStrength()));
+		}
+	}
+	for (int i = 0; i < neurons; i++)
+	{
+		Neurons[i].setBias(packet->Neurons[i].getBias());
+		Neurons[i].setOperator(packet->Neurons[i].getOperator());
+		// Deep copy synapses for Neurons (to Neurons, Outputs, CommOutputs)
+	}
+	for (int i = 0; i < outputs; i++) {
+        Outputs[i].setBias(packet->Outputs[i].getBias());
+        Outputs[i].setOperator(packet->Outputs[i].getOperator());
+        // Outputs usually don't have outgoing synapses within the packet
+    }
+	for (int i = 0; i < commOutputs; i++) { // Copy CommOutputs neurons
+        CommOutputs[i].setBias(packet->CommOutputs[i].getBias());
+        CommOutputs[i].setOperator(packet->CommOutputs[i].getOperator());
+        // CommOutputs usually don't have outgoing synapses *within* the packet
+    }
+}
 void Packet::Init(const std::string &id, int ins, int mid, int outs, int commOuts, int maxSyns, int outSynsParam, int commOutSynsParam, int repeats, int RandRange, int RandChance, int ChanceParam) 
 {
 	this->packetId = id; 
@@ -147,44 +203,35 @@ void Packet::Init(const std::string &id, int ins, int mid, int outs, int commOut
 	this->midRepeats = repeats;
 	this->Chance = ChanceParam;
 
-	Inputs = std::make_unique<Neuron[]>(inputs);
+	Inputs.resize(inputs);
 	for (int i = 0; i < inputs; i++)
 		Inputs[i].InitRandomise(randRange);
 	NeuronsMade += inputs;
 
-	Neurons = std::make_unique<Neuron[]>(neurons);
+	Neurons.resize(neurons);
 	for (int i = 0; i < neurons; i++)
 		Neurons[i].InitRandomise(randRange);
 	NeuronsMade += neurons;
 
-	Outputs = std::make_unique<Neuron[]>(outputs);
+	Outputs.resize(outputs);
 	for (int i = 0; i < outputs; i++)
 		Outputs[i].InitRandomise(randRange);
 	NeuronsMade += outputs;
 
-	CommOutputs = std::make_unique<Neuron[]>(commOutputs); // Initialize CommOutputs layer
+	CommOutputs.resize(commOutputs); // Initialize CommOutputs layer
 	for (int i = 0; i < commOutputs; i++)
 		CommOutputs[i].InitRandomise(randRange);
 	NeuronsMade += commOutputs;
 	
 	// Adjust firingNeurons array size if it's used for all potentially firing internal neurons
-	firingNeurons = std::make_unique<bool[]>(inputs + neurons /* + commOutputs if they also fire based on internal state before IPC */);
+	firingNeurons.resize(inputs + neurons /* + commOutputs if they also fire based on internal state before IPC */);
 	
 	CreateSynapses(maxSyns);
 }
 // destructor
 Packet::~Packet()
 {
-	if (Inputs)
-		Inputs.reset();
-	if (Neurons)
-		Neurons.reset();
-	if (Outputs)
-		Outputs.reset();
-	if (CommOutputs) // Reset CommOutputs
-		CommOutputs.reset();
-	if (firingNeurons)
-		firingNeurons.reset();
+
 }
 void Packet::SRand()
 {
@@ -194,19 +241,19 @@ int Packet::findNeuron(Neuron *n)
 {
 	int base = 0;
 	for (int i = 0; i < inputs; i++)
-		if (Inputs.get() + i == n)
+		if (Inputs.data() + i == n)
 			return base + i;
 	base += inputs;
 	for (int i = 0; i < neurons; i++)
-		if (Neurons.get() + i == n)
+		if (Neurons.data() + i == n)
 			return base + i;
 	base += neurons;
 	for (int i = 0; i < outputs; i++)
-		if (Outputs.get() + i == n)
+		if (Outputs.data() + i == n)
 			return base + i;
 	base += outputs;
 	for (int i = 0; i < commOutputs; i++) // Search in CommOutputs
-		if (CommOutputs.get() + i == n)
+		if (CommOutputs.data() + i == n)
 			return base + i;
 	return -1; // Not found
 }
@@ -350,7 +397,8 @@ int Packet::CreateSynapses(int maxSyns)
 			}
 		}
 	}
-	
+	if (outSyns == 0)
+		outSyns = neurons / outputs;
 	// Connections from Neurons to Outputs
 	if (neurons > 0 && outputs > 0 && outSyns > 0) {
 		std::vector<Neuron*> source_neurons_for_output;
@@ -433,6 +481,16 @@ int Packet::CreateSynapses(int maxSyns)
 		}
 	}
 	return numCreated;
+}
+void Packet::Run() {
+	RunOnceGPU(nullptr);
+	for (int i = 0; i < midRepeats - 1; i++)
+	{
+		RunOnceGPU(nullptr);
+	}
+	for (int i = 0; i < outputs; i++) {
+		Outputs[i].FireNow();
+	}
 }
 // check if neuron n is in neuron ns
 bool Packet::hasNeuron(Neuron **ns, int size, Neuron *n)
@@ -548,28 +606,104 @@ void Packet::RunOnceCPU(int *a)
 	}
 }
 
-void Packet::RunOnceGPU(int *a)
+bool find_in(std::vector<Neuron> &vec, Neuron *n)
+{	
+	auto it = std::find_if(vec.begin(), vec.end(),
+		[&](const Neuron &neuron) { return &neuron == n; });
+	if (it != vec.end())
+    	return true;
+	return false; // Not found
+}
+
+int find_where(std::vector<Neuron> &vec, Neuron *n)
 {
-	getFiringNeuronsAndDecay(); 
-	if (a != nullptr)
+	auto it = std::find_if(vec.begin(), vec.end(),
+		[&](const Neuron &neuron) { return &neuron == n; });
+	if (it != vec.end())
+		return std::distance(vec.begin(), it);
+	return -1; // Not found
+}
+int Packet::getNeuronIndex(Neuron *n)
+{
+
+	if (find_in(Inputs, n))
+		return find_where(Inputs, n);
+	if (find_in(Neurons, n))
+		return find_where(Neurons, n) + inputs;
+	if (find_in(Outputs, n))
+		return find_where(Outputs, n) + inputs + neurons;
+	return -1;
+}
+std::vector<std::vector<int>> Packet::getSynStrengths()
+{
+	int totalUNs = neurons + outputs;
+	std::vector<std::vector<int>> synStrengths(totalUNs); // Use vector of vectors for safer memory management
+	std::vector<int> indexAmount;			  // Track the number of synapses for each neuron
+	std::vector<int> iter;
+
+	indexAmount.resize(totalUNs, 1);
+	iter.resize(totalUNs, 1);
+	// Count the number of synapses for each neuron
+	for (int i = 0; i < inputs + neurons; i++)
 	{
-		for (int i = 0; i < inputs; i++)
+		if (!firingNeurons[i])
+			continue;
+
+		Neuron *n = getNeuron(i < inputs ? 0 : 1, i < inputs ? i : i - inputs);
+		if (!n)
+			continue;
+
+		Synapse *syns = n->getSynapses();
+		for (int j = 0; j < n->getNumSyns(); j++)
 		{
-			Inputs[i].set(a[i]); 
+			int toIndex = getNeuronIndex(syns[j].getTo());
+			if (toIndex >= 0 && toIndex < totalUNs)
+			{
+				indexAmount[toIndex]++;
+			}
 		}
 	}
+
+	// Resize vectors to hold the synapse strengths
+	for (int i = 0; i < totalUNs; i++)
+	{
+		synStrengths[i].resize(indexAmount[i]); // +1 for the length
+		synStrengths[i][0] = indexAmount[i];					   // Store the length at the first index
+	}
+
+	// Populate the synapse strengths
+	for (int i = 0; i < inputs + neurons; i++)
+	{
+		if (!firingNeurons[i])
+			continue;
+
+		Neuron *n = getNeuron(i < inputs ? 0 : 1, i < inputs ? i : i - inputs);
+		if (!n)
+			continue;
+
+		Synapse *syns = n->getSynapses();
+		int val = n->getVal()/n->getNumSyns();
+		for (int j = 0; j < n->getNumSyns(); j++)
+		{
+			int toIndex = getNeuronIndex(syns[j].getTo());
+			if (toIndex >= 0 && toIndex < totalUNs)
+			{
+				synStrengths[toIndex][iter[toIndex]++] = syns[j].getStrength() + val;
+			}
+		}
+	}
+
+	return synStrengths;
+}
+void Packet::RunOnceGPU(int *a)
+{
+	getFiringNeuronsAndDecay();
 
 	auto synStrengthsHost = getSynStrengths(); 
 	int totalTargetableUNs = neurons + outputs + commOutputs; 
 
-	if (totalTargetableUNs == 0) { // No targetable neurons, nothing to do
-		if (a != nullptr) { // Still need to reset inputs if they were set
-			for (int i = 0; i < inputs; i++) {
-				Inputs[i].set(0);
-			}
-		}
+	if (totalTargetableUNs == 0) // No targetable neurons, nothing to do
 		return;
-	}
 
 	// --- Prepare data for GPU ---
 	// 1. Flatten synStrengthsHost into a single array and calculate total number of strength entries
@@ -650,11 +784,7 @@ void Packet::RunOnceGPU(int *a)
 	// --- Launch Kernel ---
 	int threadsPerBlock = 256;
 	int numBlocks = (totalTargetableUNs + threadsPerBlock - 1) / threadsPerBlock;
-	vectorSum<<<numBlocks, threadsPerBlock>>>(d_totals, d_from_pointers_array, totalTargetableUNs);
-	err = cudaGetLastError();
-	if (err != cudaSuccess) { std::cerr << "CUDA Kernel launch failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-	err = cudaDeviceSynchronize(); // Wait for kernel to complete
-    if (err != cudaSuccess) { std::cerr << "CUDA Device Sync failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
+	Wrapper::VSWrapper(d_totals, d_from_pointers_array, totalTargetableUNs);
 
 
 	// --- Copy results back to host ---
@@ -692,179 +822,29 @@ void Packet::RunOnceGPU(int *a)
 		}
 	}
 }
+
+
 // ...existing code...
-
-void Packet::RunOnceGPU(int *a)
-{
-	getFiringNeuronsAndDecay(); 
-	if (a != nullptr)
-	{
-		for (int i = 0; i < inputs; i++)
-		{
-			Inputs[i].set(a[i]); 
-		}
-	}
-
-	auto synStrengthsHost = getSynStrengths(); 
-	int totalTargetableUNs = neurons + outputs + commOutputs; 
-
-	if (totalTargetableUNs == 0) { // No targetable neurons, nothing to do
-		if (a != nullptr) { // Still need to reset inputs if they were set
-			for (int i = 0; i < inputs; i++) {
-				Inputs[i].set(0);
-			}
-		}
-		return;
-	}
-
-	// --- Prepare data for GPU ---
-	// 1. Flatten synStrengthsHost into a single array and calculate total number of strength entries
-	std::vector<int> h_flat_strengths;
-	std::vector<int*> h_from_pointers(totalTargetableUNs); // Host array of pointers
-	size_t total_strength_entries = 0;
-
-	for (const auto& strengths_for_neuron : synStrengthsHost) {
-		total_strength_entries += strengths_for_neuron.size();
-	}
-	h_flat_strengths.reserve(total_strength_entries);
-
-	size_t current_flat_offset = 0;
-	for (int i = 0; i < totalTargetableUNs; ++i) {
-		if (!synStrengthsHost[i].empty()) {
-			// The address h_from_pointers[i] will point to on the GPU
-			// will be relative to the start of d_flat_strengths.
-			// So, h_from_pointers[i] stores the *data* that d_from_pointers[i] will point to.
-			// This requires careful handling of pointer arithmetic on the GPU side or
-			// passing an array of offsets if d_from_pointers stores offsets.
-			// For the current kernel `int **from`, `d_from_pointers` needs to be an array of actual device pointers.
-
-			// Copy data for current neuron into the flat vector
-			h_flat_strengths.insert(h_flat_strengths.end(), synStrengthsHost[i].begin(), synStrengthsHost[i].end());
-			// h_from_pointers[i] will be set after d_flat_strengths is allocated and pointers are calculated
-		} else {
-			// If a neuron has no incoming synapses, its pointer can be null or point to an empty segment.
-            // For simplicity with the current kernel, we might need to ensure it points to a "count = 0" entry.
-            // If synStrengthsHost[i] is truly empty, we need to handle this.
-            // Let's assume getSynStrengths always provides at least a count element [0] if no strengths.
-            if (synStrengthsHost[i].empty()) { // Should not happen if getSynStrengths guarantees [count, ...]
-                 // Add a dummy [0] entry if it's completely empty
-                 h_flat_strengths.push_back(0);
-            } else {
-                 // Already handled by the loop above
-            }
-		}
-	}
-    
-	// --- GPU Memory Allocation ---
-	int *d_totals = nullptr;
-	int *d_flat_strengths_all = nullptr; // This will hold all data from h_flat_strengths
-	int **d_from_pointers_array = nullptr; // This will be an array of pointers on the device
-
-	cudaError_t err;
-	err = cudaMalloc((void**)&d_totals, totalTargetableUNs * sizeof(int));
-	if (err != cudaSuccess) { std::cerr << "CUDA Malloc d_totals failed: " << cudaGetErrorString(err) << std::endl; return; }
-	
-	err = cudaMalloc((void**)&d_flat_strengths_all, h_flat_strengths.size() * sizeof(int));
-	if (err != cudaSuccess) { std::cerr << "CUDA Malloc d_flat_strengths_all failed: " << cudaGetErrorString(err) << std::endl; cudaFree(d_totals); return; }
-
-	err = cudaMalloc((void**)&d_from_pointers_array, totalTargetableUNs * sizeof(int*));
-	if (err != cudaSuccess) { std::cerr << "CUDA Malloc d_from_pointers_array failed: " << cudaGetErrorString(err) << std::endl; cudaFree(d_totals); cudaFree(d_flat_strengths_all); return; }
-
-	// --- Copy flat strengths to GPU ---
-	err = cudaMemcpy(d_flat_strengths_all, h_flat_strengths.data(), h_flat_strengths.size() * sizeof(int), cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) { std::cerr << "CUDA Memcpy h_flat_strengths to d_flat_strengths_all failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-
-	// --- Prepare the array of device pointers (d_from_pointers_array) ---
-	// h_from_pointers will store the actual device pointers that d_from_pointers_array will point to.
-	std::vector<int*> h_device_pointers_for_d_from_array(totalTargetableUNs);
-	current_flat_offset = 0;
-	for(int i=0; i < totalTargetableUNs; ++i) {
-		if (!synStrengthsHost[i].empty()) {
-			h_device_pointers_for_d_from_array[i] = d_flat_strengths_all + current_flat_offset;
-			current_flat_offset += synStrengthsHost[i].size();
-		} else {
-            // If getSynStrengths guarantees a [0] for empty, this offset logic needs to account for it.
-            // Assuming h_flat_strengths included a [0] for originally empty synStrengthsHost[i]
-            h_device_pointers_for_d_from_array[i] = d_flat_strengths_all + current_flat_offset;
-            current_flat_offset += 1; // Account for the [0] entry
-		}
-	}
-	
-	err = cudaMemcpy(d_from_pointers_array, h_device_pointers_for_d_from_array.data(), totalTargetableUNs * sizeof(int*), cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) { std::cerr << "CUDA Memcpy h_device_pointers_for_d_from_array to d_from_pointers_array failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-
-	// --- Launch Kernel ---
-	int threadsPerBlock = 256;
-	int numBlocks = (totalTargetableUNs + threadsPerBlock - 1) / threadsPerBlock;
-	vectorSum<<<numBlocks, threadsPerBlock>>>(d_totals, d_from_pointers_array, totalTargetableUNs);
-	
-	err = cudaGetLastError();
-	if (err != cudaSuccess) { std::cerr << "CUDA Kernel launch failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-	err = cudaDeviceSynchronize(); // Wait for kernel to complete
-    if (err != cudaSuccess) { std::cerr << "CUDA Device Sync failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-
-
-	// --- Copy results back to host ---
-	std::vector<int> totals(totalTargetableUNs);
-	err = cudaMemcpy(totals.data(), d_totals, totalTargetableUNs * sizeof(int), cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) { std::cerr << "CUDA Memcpy d_totals to totals failed: " << cudaGetErrorString(err) << std::endl; /* free memory */ return; }
-
-	// --- Free GPU Memory ---
-	cudaFree(d_totals);
-	cudaFree(d_flat_strengths_all);
-	cudaFree(d_from_pointers_array);
-
-	// --- Apply summed strengths to neurons (same as CPU version) ---
-	for (int i = 0; i < totalTargetableUNs; i++)
-	{
-		Neuron *n = nullptr;
-		if (i < neurons) { 
-			n = getNeuron(1, i); 
-		} else if (i < neurons + outputs) { 
-			n = getNeuron(2, i - neurons); 
-		} else { 
-			n = getNeuron(3, i - (neurons + outputs));
-		}
-		
-		if (n != nullptr)
-		{
-			n->add(totals[i]);
-		}
-	}
-
-	if (a != nullptr) { 
-		for (int i = 0; i < inputs; i++)
-		{
-			Inputs[i].set(0); 
-		}
-	}
-}
-// ...existing code...
-}
 
 // randomise, for networks based off other networks.
 // this should include adding/deleting synapses,
 // randomising synapse strength, and neuron bias.
-void Packet::Randomise(int Chance1, int chance2, int chance3)
+void Packet::Randomise(int SynapseChance)
 {
 	// code here <3
 	for (int i = 0; i < inputs; i++)
 	{
-		Inputs[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, Chance1);
+		Inputs[i].Randomise(randChance, randRange, true, &Neurons, SynapseChance);
 	}
 	for (int i = 0; i < neurons; i++)
 	{
-		Neurons[i].Randomise(randChance, randRange, true, Neurons.get(), neurons, chance2);
-		Neurons[i].RandomiseSynapses(chance3, randChance, randRange, Neurons.get(), neurons);
+		Neurons[i].Randomise(randChance, randRange, true, &Neurons, SynapseChance);
+		Neurons[i].RandomiseSynapses(SynapseChance, randChance, randRange, &Outputs);
 	}
 	for (int i = 0; i < outputs; i++)
 	{
-		Outputs[i].Randomise(randChance, randRange, false, 0, 0, 0);
+		Outputs[i].Randomise(randChance, randRange, false, NULL, 0);
 	}
-}
-void Packet::EzRandomise()
-{
-	Randomise(Chance + (Chance / 4), Chance, Chance - (Chance / 4));
 }
 
 // Updated fdll functions to be Packet-centric
@@ -894,12 +874,12 @@ fdll Packet *ClonePacket(Packet *pkt)
 }
 
 // Renamed from RandomiseNetwork to RandomisePacket
-fdll void RandomisePacket(Packet *pkt)
+fdll void RandomisePacket(Packet *pkt, int chance)
 {
 	if (pkt != nullptr)
 	{
 		// EzRandomise uses the packet's internal Chance, randChance, randRange
-		pkt->EzRandomise(); 
+		pkt->Randomise(chance); 
 	}
 }
 
@@ -938,24 +918,11 @@ fdll void InitPacket(Packet *pkt, const char *id, int ins, int mid, int out, int
 	}
 }
 
-// Renamed from Run to RunPacketCPU for clarity
-fdll int *RunPacketCPU(Packet *pkt, int *input, int repeats = -1)
-{
-	if (pkt != nullptr)
-	{
-		int effectiveRepeats = repeats;
-		if (repeats == -1) // Use packet's default if -1 is passed
-			effectiveRepeats = pkt->getMidRepeats();
-		return pkt->RunCPU(input, effectiveRepeats);
-	}
-	return nullptr;
-}
-
 fdll Neuron *GetPacketNeurons(Packet *pkt) // Renamed
 {
 	if (pkt != nullptr)
 	{
-		return pkt->GetNeurons();
+		return pkt->GetNeurons()->data(); 
 	}
 	return nullptr;
 }
@@ -963,7 +930,7 @@ fdll Neuron *GetPacketInputs(Packet *pkt) // Renamed
 {
 	if (pkt != nullptr)
 	{
-		return pkt->GetInputs();
+		return pkt->GetInputs()->data();
 	}
 	return nullptr;
 }
@@ -971,7 +938,7 @@ fdll Neuron *GetPacketOutputs(Packet *pkt) // Renamed
 {
 	if (pkt != nullptr)
 	{
-		return pkt->GetOutputs();
+		return pkt->GetOutputs()->data();
 	}
 	return nullptr;
 }
@@ -979,7 +946,7 @@ fdll Neuron *GetPacketCommOutputs(Packet *pkt) // Added for CommOutputs
 {
     if (pkt != nullptr)
     {
-        return pkt->GetCommOutputs();
+        return pkt->GetCommOutputs()->data();
     }
     return nullptr;
 }
@@ -1015,15 +982,6 @@ fdll int GetPacketCommOutputsSize(Packet *pkt) // Added for CommOutputs
         return pkt->getCommOutputsCount();
     }
     return 0;
-}
-
-fdll int GetPacketNeuronIndex(Packet *pkt, Neuron *n) // Renamed
-{
-	if (pkt != nullptr && n != nullptr)
-	{
-		return pkt->getNeuronIndex(n);
-	}
-	return -1;
 }
 fdll void SRandPacket(Packet *pkt) // Renamed, though SRand is often global
 {

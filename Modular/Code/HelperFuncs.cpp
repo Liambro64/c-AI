@@ -1,4 +1,5 @@
 #include "../Project.hpp"
+namespace helpers {
 bool tryFree(void *ptr) {
     try {
         free(ptr);
@@ -7,4 +8,7 @@ bool tryFree(void *ptr) {
         return false;
     }
     return true;
+}
+
+
 }

@@ -6,11 +6,11 @@
 //my implementation
 class Packet {
 private:
-	std::unique_ptr<Neuron[]> Inputs	{};
-	std::unique_ptr<Neuron[]> Neurons	{};
-	std::unique_ptr<Neuron[]> Outputs	{};
-	std::unique_ptr<Neuron[]> CommOutputs {}; // Added Communication Outputs
-	std::unique_ptr<bool[]>firingNeurons{}; // This might need to include CommOutputs if they can fire based on internal state
+	std::vector<Neuron> Inputs	{};
+	std::vector<Neuron> Neurons	{};
+	std::vector<Neuron> Outputs	{};
+	std::vector<Neuron> CommOutputs {}; // Added Communication Outputs
+	std::vector<bool>firingNeurons{}; // This might need to include CommOutputs if they can fire based on internal state
 	std::string packetId; 
 public:
 	int randRange 		{};
@@ -27,6 +27,7 @@ public:
 
 
 	Packet();
+	Packet(const Packet& packet); // Copy constructor
 	Packet(const std::string& id, int ins, int mid, int outs, int commOuts, int maxSyns = -1, int outSyns = 0, int commOutSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100); // Added commOuts and commOutSyns
 	Packet(Packet *packet); 
 	~Packet();
@@ -56,26 +57,28 @@ public:
 	int getCommOutSyns() { return commOutSyns; } // Getter for commOutSyns
 	int setCommOutSyns(int coSyns) { commOutSyns = coSyns; return commOutSyns; } // Setter for commOutSyns
 
-	Neuron *GetInputs() { return Inputs.get(); }
-	Neuron *GetNeurons() { return Neurons.get(); }
-	Neuron *GetOutputs() { return Outputs.get(); }
-	Neuron *GetCommOutputs() { return CommOutputs.get(); } // Getter for CommOutputs neurons
+	std::vector<Neuron> *GetInputs() { return &Inputs; }
+	std::vector<Neuron> *GetNeurons() { return &Neurons; }
+	std::vector<Neuron> *GetOutputs() { return &Outputs; }
+	std::vector<Neuron> *GetCommOutputs() { return &CommOutputs; } // Getter for CommOutputs neurons
 	std::string GetId() const { return packetId; } 
 
 
 	Neuron *getNeuron(int a, int b); // Layer index 'a' will need to account for CommOutputs
 	int		CreateSynapses(int maxSyns = -1);
 	void Init(const std::string& id, int ins, int mid, int outs, int commOuts, int maxSyns = -1, int outSyns = 0, int commOutSyns = 0, int repeats = 4, int RandRange = 5, int RandChance = 100, int Chance = 100); // Added commOuts and commOutSyns
+	void Init(Packet *p);
 	void SRand();
 
 	int	findNeuron(Neuron *n); // Will need to search CommOutputs
-	bool *Run();
+	void Run();
 	bool *RunCPU();
-	bool *RunGPU();
+	int *RunGPU();
 	bool hasNeuron(Neuron **ns, int size, Neuron *n);
 	int *RunCPU(int *, int = 3);
 	void RunOnceCPU(int *);
 	void RunOnceGPU(int *);
+	void GPUStuff();
 	int *Run(int *);
 	void getFiringNeurons();
 	void getFiringNeuronsAndDecay();
@@ -86,8 +89,7 @@ public:
 	bool *LayerCheck(Neuron *layer, int length);
 	void printSynapses(char *filter = "none");
 
-	void Randomise(int Chance1, int chance2, int chance3);
-	void EzRandomise();
+	void Randomise(int);
 };
 
 

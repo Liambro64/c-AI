@@ -1,38 +1,46 @@
 gcc=g++
-dgcc=g++ -g
-mdgcc=g++ -gdwarf-2
+nvcc=nvcc
+dbg=-g
 rm=rm -rf
 srcf=Code
 objf=Objs
-objs=Neuron.o Synapse.o NeuralNetwork.o HelpFuncs.o CudaFuncs.o
-dobjs=HelpFuncs.o Neuron.o Synapse.o NeuralNetwork.o CudaFuncs.o
+nvcx=-Xcompiler
+objs=HelperFuncs.o Neuron.o Synapse.o Packet.o NeuralNetwork.o 
+dobjs=HelpFuncs.o Neuron.o Synapse.o NeuralNetwork.o 
+cuFile=CUDAFuncs.cu
+cuObj=CUDAFuncs.o
 main=main.cpp
 bin=Bin
 name=NeuralNetwork.dll
 dllBuild = null
 extension = .exe
 link=blah
+dbglink=blah
 copy=cp
 ifeq ($(OS),Windows_NT)
     dllBuild = -DBUILD_DLL
 	extension = .exe
+	dbg = -gdwarf-2
 	rm = del
 	srcf=Code\\
 	objf=Objs\\
 	bin=Bin\\
 	copy=copy
-	link=-L$(bin) -lNeuralNetwork
+	link=-L$(bin) -l$(name)
+	dbglink=-L$(bin) -l$(name)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
 		dllBuild = -fPIC
 		extension = .out
+		dbg = -g
 		rm = rm -rf
 		srcf=Code/
 		objf=Objs/
 		bin=Bin/
 		copy=cp
 		link=$(bin)$(name)
+		dbglink=$(bin)Debug$(name)
     endif
     ifeq ($(UNAME_S),Darwin)
 		dllBuild = -fPIC
@@ -55,35 +63,32 @@ endif
 
 
 
-dll: $(objs)
-	$(gcc) -shared -o $(bin)$(name) $(addprefix $(objf),$(objs))
+dll: $(objs) CudaObj
+	$(nvcc) -o $(bin)$(name) $(addprefix $(objf),$(objs)) $(objf)$(cuObj) $(nvcx) -shared
 
-dllWin: winObjs
-	$(gcc) -shared -o $(bin)$(name) $(addprefix $(objf),$(objs))
-
-debugdll: $(dobjs)
-	$(dgcc) -shared -o $(bin)DBG_$(name) $(addprefix $(objf),$(dobjs))
-
-winObjs: 
-	$(gcc) -c -DBUILD_DLL $(srcf)Neuron.cpp			-o $(objf)Neuron.o
-	$(gcc) -c -DBUILD_DLL $(srcf)Synapse.cpp			-o $(objf)Synapse.o
-	$(gcc) -c -DBUILD_DLL $(srcf)NeuralNetwork.cpp	-o $(objf)NeuralNetwork.o
-	$(gcc) -c -DBUILD_DLL $(srcf)HelpFuncs.cpp		-o $(objf)HelpFuncs.o
+debugdll: dbgObjs
+	$(nvcc) -o $(bin)Debug$(name) $(addprefix $(objf),$(objs)) $(objf)$(cuObj) $(nvcx) -shared $(nvcx) $(dbg)
 
 dbgObjs: 
-	$(dgcc) -c $(srcf)Neuron.cpp		-o $(objf)Neuron.o
-	$(dgcc) -c $(srcf)Synapse.cpp		-o $(objf)Synapse.o
-	$(dgcc) -c $(srcf)NeuralNetwork.cpp	-o $(objf)NeuralNetwork.o
-	$(dgcc) -c $(srcf)HelpFuncs.cpp		-o $(objf)HelpFuncs.o
+	$(nvcc) -c $(srcf)Neuron.cpp		-o $(objf)Neuron.o			$(nvcx) $(dbg) $(nvcx) $(dllBuild)
+	$(nvcc) -c $(srcf)Synapse.cpp		-o $(objf)Synapse.o			$(nvcx) $(dbg) $(nvcx) $(dllBuild)
+	$(nvcc) -c $(srcf)Packet.cpp		-o $(objf)Packet.o			$(nvcx) $(dbg) $(nvcx) $(dllBuild)
+	$(nvcc) -c $(srcf)NeuralNetwork.cpp	-o $(objf)NeuralNetwork.o	$(nvcx) $(dbg) $(nvcx) $(dllBuild)
+	$(nvcc) -c $(srcf)HelperFuncs.cpp	-o $(objf)HelperFuncs.o		$(nvcx) $(dbg) $(nvcx) $(dllBuild)
+	$(nvcc) -c $(srcf)CUDAFuncs.cu		-o $(objf)CUDAFuncs.o		$(nvcx) $(dbg) $(nvcx) $(dllBuild)
 
 $(objs): %.o: $(srcf)%.cpp
-	$(gcc) -c $(dllBuild) $^ -o $(objf)$@
-
+	$(nvcc) -c $^ -o $(objf)$@ $(nvcx) $(dllBuild)
+CudaObj: $(srcf)$(cuFile)
+	$(nvcc) -c $(srcf)$(cuFile) -o $(objf)$(cuObj) $(nvcx) $(dllBuild)
 test: dll
 	$(gcc) -o $(bin)test$(extension) $(srcf)$(main) $(link)
+debugtest: debugdll
+	$(gcc) -o $(bin)testdebug$(extension) $(srcf)$(main) $(dbg) $(dbglink) 
 
 runtest : test
 	$(bin)test$(extension)
+
 makenpush : dll
 	$(copy) $(bin)$(name) "C:\\Users\\Cooke\\Coding Projects\\UnityCameraIntegration\\C++AI Visualiser\\Assets\\Scripts\\NetworkWrapper\\NeuralNetwork.dll"
 

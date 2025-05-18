@@ -20,6 +20,9 @@ Synapse::Synapse(Neuron *frm, Neuron *too, int str) {
 void Synapse::Fire() {
 	to->add(strength);
 }
+void Synapse::FireNow(int val) {
+	to->add(val + strength);
+}
 
 void Synapse::Randomise(int chance, int range) {
 	if ((rand() % chance) == 1)

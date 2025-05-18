@@ -76,22 +76,13 @@ Synapse *Neuron::FireNow()
 {
 	for (size_t i = 0; i < syns.size(); i++)
 	{
-		syns[i].Fire();
+		syns[i].FireNow(val);
 	}
 	return syns.data(); // Return pointer to underlying data, be cautious
 }
 
-//why doesnt this fire the synapses?
-//because im working on cuda functions that allow
-//my gpu to do the addition work and copy the gpu
-//memory (almost) straight into the neurons.
-Synapse *Neuron::Fire()
-{
-	return syns.data(); // Return pointer to underlying data, be cautious
-}
-
 //randomise for learning
-void Neuron::Randomise(int chance, int range, bool randomiseSynapsesFlag, Neuron *layer, int size, int synapseChance)
+void Neuron::Randomise(int chance, int range, bool randomiseSynapsesFlag, std::vector<Neuron> *layer, int synapseChance)
 {
 	int r1 = rand() % chance;
 	int r2 = rand() % chance;
@@ -102,7 +93,7 @@ void Neuron::Randomise(int chance, int range, bool randomiseSynapsesFlag, Neuron
 	if (!randomiseSynapsesFlag)
 		return;
 	
-	RandomiseSynapses(synapseChance, chance, range, layer, size); 
+	RandomiseSynapses(synapseChance, chance, range, layer); 
 	
 	for (size_t i = 0; i < syns.size(); i++) 
 		syns[i].Randomise(chance, range);
@@ -124,11 +115,11 @@ bool Neuron::canFire()
 /// @param randChance The chance of a randomisation event (e.g. overall modification).
 /// @param randRange The range for randomizing new synapse strengths.
 /// @return how many synapses were added/removed (net change)
-int Neuron::RandomiseSynapses(int changeChance, int randChancePar, int randRange, Neuron *layer, int layerSize)
+int Neuron::RandomiseSynapses(int changeChance, int randChance, int randRange, std::vector<Neuron> *layer)
 {
 	int netChange = 0;
-
-	if (rand() % randChancePar != 1) // Overall chance to modify synapses
+	int layerSize = layer ? layer->size() : 0; // Check if layer is not null and get its size
+	if (rand() % randChance != 1) // Overall chance to modify synapses
 		return 0;
 
 	// Attempt to delete existing synapses
@@ -148,11 +139,11 @@ int Neuron::RandomiseSynapses(int changeChance, int randChancePar, int randRange
 	// Attempt to add new synapses from the provided layer
 	if (layer != nullptr && layerSize > 0) {
 		for (int i = 0; i < layerSize; i++) {
-			if (rand() % changeChance == 0 && (layer + i != this)) // Chance to add a new synapse
+			if (rand() % changeChance == 0 && (&((*layer)[i]) != this)) // Chance to add a new synapse
 			{
 				// Avoid duplicate synapses to the same target neuron if desired (requires checking existing syns)
 				// For simplicity, this example doesn't check for duplicates before adding.
-				syns.emplace_back(randRange, this, layer + i);
+				syns.push_back(Synapse(randRange, this, &(*layer)[i]));
 				netChange++;
 			}
 		}

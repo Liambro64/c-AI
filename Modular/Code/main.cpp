@@ -22,114 +22,172 @@ const void print(char *format, ...)
         va_end(args);
     }
 }
-
-void MultipleTimeTest(int ins, int middles, int outs, int amount)
+void InitNetwork(NeuralNetwork *net)
 {
 
-    auto start = std::chrono::high_resolution_clock::now();
-    std::unique_ptr<NeuralNetwork[]> networks(new NeuralNetwork[amount]);
-    for (int i = 0; i < amount; i++)
-        networks[i].Init(ins, middles, outs);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    printf("Made %i Neural Network%s in %f seconds\n", amount, amount > 1 ? "s" : "", diff);
-    printf("Average time per network: %f\n", diff / amount);
-    networks.reset();
-}
-
-void SingleBigTimeTest()
-{
-    auto start = std::chrono::high_resolution_clock::now();
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork());
-    network.get()->Init(1000, 10000, 1000);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    printf("Made 1 Neural Network of size (1000, 10000, 1000) in %f seconds\n", diff);
-    network.reset();
-}
-
-void TimeTest(int ins, int mids, int outs)
-{
-
-    auto start = std::chrono::high_resolution_clock::now();
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork);
-    network->Init(ins, mids, outs);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    printf("Made network of size %i %i %i in %f seconds\n", ins, mids, outs, diff);
-    network.reset();
-}
-
-void RunTest(int ins, int mids, int outs, int *inputs, int repeats = 3)
-{
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork);
-    int *outputs;
-    if (debug)
+    int ins = 50;
+    int packets = 3;
+    std::vector<PacketConfig> pkt_configs;
+    std::vector<std::string> Ids = {"packet1", "packet2", "packet3"};
+    for (int i = 0; i < packets; ++i)
     {
-        auto start = std::chrono::high_resolution_clock::now();
-        network->Init(ins, mids, outs);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> diff = end - start;
-        print("Made network of size %i %i %i in %f seconds\n", ins, mids, outs, diff);
-        start = std::chrono::high_resolution_clock::now();
-        outputs = network->RunCPU(inputs, repeats);
-        end = std::chrono::high_resolution_clock::now();
-        diff = end - start;
-        print("Ran network in %f seconds\n", diff);
+        PacketConfig pkt_config;
+        pkt_config.id = Ids[i];
+        pkt_config.inputs = 20;
+        pkt_config.neurons = 50;
+        pkt_config.outputs = 10;
+        pkt_config.commOutputs = 0;
+        pkt_configs.push_back(pkt_config);
     }
-    else
+    int outs = 10;
+    NetworkConfig config;
+    config.systemInputs = ins;
+    config.systemOutputs = outs;
+    config.packetConfigs = pkt_configs;
+    config.globalRepeats = 1;
+    config.globalRandRange = 50;
+    config.globalRandChance = 100;
+    config.globalChance = 100;
+    net->Init(config);
+}
+void RunNetwork(NeuralNetwork *net, int ins)
+{
+    std::vector<int> inputs;
+    inputs.resize(ins);
+    for (int i = 0; i < ins; i++)
     {
-        network->Init(ins, mids, outs);
-        outputs = network->RunCPU(inputs);
+        inputs[i] = rand() % 100;
     }
-    network->printSynapses("none");
-    print("Outputs: ");
-    for (int i = 0; i < outs; i++)
-        print("%i%s", outputs[i], (i != outs - 1) ? ", " : "\n");
-    free(outputs);
-    network.reset();
-}
-void CloneTest(int ins, int mids, int outs) {
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork);
-    network->Init(ins, mids, outs);
-    print("Network created\n");
-    std::unique_ptr<NeuralNetwork> clone(network->Clone());
-    print("Network cloned\n");
-    network.reset();
-    clone.reset();
-}
-void RandomiseTest(int ins, int mids, int outs, int repeats) {
-    std::unique_ptr<NeuralNetwork> network(new NeuralNetwork);
-    network->Init(ins, mids, outs);
-    network->Chance = 20;
-    print("Network created\n");
-    for (int i = 0; i < repeats; i++)
+    auto out = net->Run(inputs.data());
+    printf("Outputs: ");
+    for (int i = 0; i < out.size(); i++)
     {
-        network->EzRandomise();
+        printf("%i ", out[i]);
     }
-    print("Network Randomised %i times\n", repeats);
-    network.reset();
+    printf("\n");
 }
+void RunNetworks(std::vector<NeuralNetwork> *nets, int ins)
+{
+    std::vector<std::thread> threads;
+    std::vector<int> inputs;
+    inputs.resize(ins);
+    for (int i = 0; i < ins; i++)
+    {
+        inputs[i] = rand() % 100;
+    }
+    for (int i = 0; i < nets->size(); i++)
+    {
+        threads.push_back(std::thread([i, &nets, inputs]()
+                                      {
+        auto out = (*nets)[i].Run((int *)inputs.data());
+        // printf("Network %i Outputs: ", i);
+        // for (int j = 0; j < out.size(); j++)
+        // {
+        //     printf("%i ", out[j]);
+        // } 
+        // printf("\n");
+     }));
+    }
+    for (int i = 0; i < threads.size(); i++)
+    {
+        if (threads[i].joinable())
+            threads[i].join();
+    }
+}
+std::vector<NeuralNetwork> CreateNetworks(int networks)
+{
+    std::vector<std::thread> threads;
+    std::vector<NeuralNetwork> nets;
+    nets.resize(networks, NeuralNetwork());
+    for (int i = 0; i < networks; i++)
+    {
+        int ins = 50;
+        int packets = 3;
+        std::vector<PacketConfig> pkt_configs;
+        std::vector<std::string> Ids = {"packet1", "packet2", "packet3"};
+        for (int i = 0; i < packets; ++i)
+        {
+            PacketConfig pkt_config;
+            pkt_config.id = Ids[i];
+            pkt_config.inputs = 20;
+            pkt_config.neurons = 50;
+            pkt_config.outputs = 10;
+            pkt_config.commOutputs = 0;
+            pkt_configs.push_back(pkt_config);
+        }
+        int outs = 10;
+        NetworkConfig config;
+        config.systemInputs = ins;
+        config.systemOutputs = outs;
+        config.packetConfigs = pkt_configs;
+        config.globalRepeats = 4;
+        config.globalRandRange = 50;
+        config.globalRandChance = 100;
+        config.globalChance = 100;
+        threads.push_back(std::thread([i, &nets, config]()
+                                      { nets[i].Init(config); }));
+    }
+    for (int i = 0; i < threads.size(); i++)
+    {
+        if (threads[i].joinable())
+            threads[i].join();
+    }
+    return nets;
+};
+void CreateAndRunNetwork()
+{
+
+    int ins = 50;
+    int packets = 3;
+    std::vector<PacketConfig> pkt_configs;
+    std::vector<std::string> Ids = {"packet1", "packet2", "packet3"};
+    for (int i = 0; i < packets; ++i)
+    {
+        PacketConfig pkt_config;
+        pkt_config.id = Ids[i];
+        pkt_config.inputs = 20;
+        pkt_config.neurons = 50;
+        pkt_config.outputs = 10;
+        pkt_config.commOutputs = 0;
+        pkt_configs.push_back(pkt_config);
+    }
+    int outs = 10;
+    NetworkConfig config;
+    config.systemInputs = ins;
+    config.systemOutputs = outs;
+    config.packetConfigs = pkt_configs;
+    config.globalRepeats = 4;
+    config.globalRandRange = 50;
+    config.globalRandChance = 100;
+    config.globalChance = 100;
+    NeuralNetwork *net = new NeuralNetwork();
+    net->Init(config);
+    std::vector<int> inputs;
+    inputs.resize(ins);
+    for (int i = 0; i < ins; i++)
+    {
+        inputs[i] = rand() % 100;
+    }
+    // auto out = net->Run(inputs.data());
+    // printf("Outputs: ");
+    // for (int i = 0; i < out.size(); i++)
+    // {
+    //     printf("%i ", out[i]);
+    // }
+    // printf("\n");
+}
+
 void CurrentLiamTest()
 {
+    int networks = 100;
+    printf("Starting Building Networks\n");
 
-    // test time for making 1 networks of 5, 25, 5
-    int inSize = 5;
-    int outSize = 5;
-    int midSize = inSize * outSize;
-
-    int max = 25;
-
-    //int inputs[inSize];
-    //for (int i = 0; i < inSize; i++)
-    //    inputs[i] = (rand() % (max * 2)) - max;
-
-    //TimeTest(inSize, midSize, outSize);
-    //RunTest(inSize, midSize, outSize, inputs, 3000);
-    // just look at the name and the function lol
-    // SingleBigTimeTest();
-    CloneTest(inSize, midSize, outSize);
-    RandomiseTest(inSize, midSize, outSize, 5);
+    std::vector<std::thread> threads;
+    threads.reserve(networks);
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+    CreateAndRunNetwork();
+    std::chrono::duration<double> elapsed_seconds = std::chrono::high_resolution_clock::now() - start;
+    printf("Created and Ran Networks in %f seconds\n", elapsed_seconds.count());
 }
 
 int main(int argc, char **argv)
@@ -138,7 +196,7 @@ int main(int argc, char **argv)
     debug = true;
     bool waitForEnd = false;
     // initialise random
-    srand(5);
+    srand(time(NULL));
     CurrentLiamTest();
     printf("Done!%s\n", waitForEnd ? " Press enter to end." : "");
     if (waitForEnd)

@@ -32,6 +32,7 @@ public:
 
 	//use functions
 	void Fire();
+	void FireNow(int val);
 	void Randomise(int chance, int range);
 };
 

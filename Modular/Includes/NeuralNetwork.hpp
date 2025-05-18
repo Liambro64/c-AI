@@ -2,74 +2,96 @@
 #ifndef NEURALNETWORK_HPP
 # define NEURALNETWORK_HPP
 # include "../Project.hpp"
-# include "Packet.hpp" // Include Packet header
+# include "Packet.hpp" 
 # include <vector>
 # include <string>
 # include <map>
+# include <utility> // For std::pair
 
-// class NeuralNetwork_Basic {
-// 	//basic implementation
-// }; // This can be removed if not used
+// Configuration structures for defining the network topology
+struct PacketConfig {
+    std::string id;
+    int inputs;
+    int neurons;
+    int outputs;
+    int commOutputs;
+    // Add other packet-specific parameters here if needed (e.g., repeats, randRange, etc.)
+    int repeats = 4;
+    int randRange = 5;
+    int randChance = 100;
+    int SynChance = 100;
+};
+
+struct InterPacketConnectionConfig {
+    std::string sourcePacketId;
+    std::string targetPacketId;
+    int numSynapses; // Number of synapses from source's CommOutputs to target's Inputs/Neurons
+    // Optional: Specify target layer (0 for Inputs, 1 for Neurons, or a ratio)
+    // For simplicity, let's assume target is always Neurons for now, or a mix.
+    // Let's add a target layer type: 0=Inputs, 1=Neurons
+    int targetLayerType = 1; // Default to connecting to the middle (Neurons) layer
+};
+
+struct NetworkConfig {
+    int systemInputs;
+    int systemOutputs;
+    std::vector<PacketConfig> packetConfigs;
+    std::vector<InterPacketConnectionConfig> interPacketConnections;
+    // Add global network parameters here if they override packet defaults
+    int globalRepeats = 4; // Default repeats for packets if not specified in PacketConfig
+    int globalRandRange = 5;
+    int globalRandChance = 100;
+    int globalChance = 100;
+};
+
 
 class NeuralNetwork {
 private:
-    // Removed direct neuron arrays (Inputs, Neurons, Outputs, firingNeurons)
-    std::vector<std::unique_ptr<Packet>> packets; // Manages multiple Packet objects
-    // We might need a mapping from system input/output indices to packet input/output neurons
-    // For now, let's assume a simple setup or handle mapping in RunCPU
+    std::vector<Packet> packets;
+	std::vector<Neuron> Inputs;
+	std::vector<Neuron> Outputs;
+    // We might need mappings for system I/O to specific packet I/O later
 
 public:
-    // randRange, randChance, midRepeats, Chance might be global settings or per-packet
-    // For now, let's keep them as potential global defaults for new packets.
-	int randRange 		{};
-	int randChance		{};
-	int midRepeats		{}; // Default repeats for packets if not specified per packet
-	int inputs			{}; // Total system inputs
+    // Removed global randRange, randChance, midRepeats, Chance as they are now in NetworkConfig
+	// -- reply --
+	// I think the network should retain these parameters for synapse creation between packets, inputs->packets and packets->outputs.
+    int inputs			{}; // Total system inputs
+	int packetCount		{}; // Total packets in the network
 	int outputs			{}; // Total system outputs
-	int Chance 			{};
+	int midRepeats		{}; // Total repeats for the network
+	int randRange		{}; // Global random range for synapse strength
+	int randChance		{}; // Global random chance for synapse creation
+	int Chance			{}; // Global chance for synapse creation
 
-    // Removed neuron-specific getters like GetInputs, GetNeurons, GetOutputs from NeuralNetwork itself
+	// Constructor
+
 
 	NeuralNetwork();
-    // Constructor might take overall system I/O counts and packet configurations
-	// Each packet vector also includes its own input/middle/communication/output counts (the int vector) and should be on size 4
-	NeuralNetwork(int systemInputs, int systemOutputs, const std::vector<std::string, std::vector<int>>& packetIds /*, other config */);
+    // Constructor now takes NetworkConfig
+	NeuralNetwork(const NetworkConfig& config); 
 	NeuralNetwork(NeuralNetwork *network); // For cloning
+	void CreateNetwork(const NetworkConfig& config);
 	~NeuralNetwork();
 	NeuralNetwork *Clone();
-	// void DestroyNeurons(); // This was tied to NN-specific neurons, now handled by Packet destructors
-
-	int getRandRange() const { return randRange; }
-	int getChance() const { return Chance; }
-	int setChance(int chance) { Chance = chance; return Chance; }
-	int setRandRange(int range) { randRange = range; return randRange; }
-	int getRandChance() const { return randChance; }
-	int setRandChance(int chance) { randChance = chance; return randChance; }
-	int getMidRepeats() const { return midRepeats; }
-	int setMidRepeats(int repeats) { midRepeats = repeats; return midRepeats; }
-	
-    int getSystemInputs() const { return inputs; }
-    int getSystemOutputs() const { return outputs; }
 
     // Methods to add and get packets
-    void AddPacket(std::unique_ptr<Packet> packet);
+    void AddPacket(Packet *packet);
     Packet* GetPacket(const std::string& packetId);
-    const std::vector<std::unique_ptr<Packet>>& GetAllPackets() const { return packets; }
+    const std::vector<Packet>& GetAllPackets() const { return packets; }
 
-    // Init will now set up the overall network structure, possibly creating default packets
-	void Init(int systemInputs, int systemOutputs /*, packet configurations */);
-	void SRand(); // Could call SRand on all packets or be a global seed
+    // Init now takes NetworkConfig and builds the network
+	void Init(const NetworkConfig& config);
+    // New method to create synapses between packets based on config
+    void CreateInterPacketSynapses(const NetworkConfig& config);
 
-    // findNeuron, getNeuron, CreateSynapses, printSynapses were NN-specific,
-    // similar functionality would now be per-packet or need careful redefinition.
-	
+	void SRand(); 
+
     // Run methods will orchestrate packet execution
-	int *RunCPU(int *systemInputValues, int repeats = -1); // Repeats could be global or per-packet
-	// void RunOnceCPU(int *); // This logic will be part of the new RunCPU
+	std::vector<int> Run(int *systemInputValues); 
 
     // Randomisation will apply to all contained packets
-	void RandomiseNetwork(int chance1, int chance2, int chance3); // Renamed for clarity
-	void EzRandomiseNetwork(); // Renamed for clarity
+	void RandomiseNetwork(); 
 };
 
 
