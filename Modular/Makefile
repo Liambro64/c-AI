@@ -18,7 +18,7 @@ link=blah
 dbglink=blah
 copy=cp
 ifeq ($(OS),Windows_NT)
-    dllBuild = -DBUILD_DLL
+    dllBuild = -fPIC
 	extension = .exe
 	dbg = -gdwarf-2
 	rm = del
@@ -27,7 +27,7 @@ ifeq ($(OS),Windows_NT)
 	bin=Bin\\
 	copy=copy
 	link=-L$(bin) -l$(name)
-	dbglink=-L$(bin) -l$(name)
+	dbglink=-L$(bin) -lDebug$(name)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)

@@ -20,24 +20,67 @@ NeuralNetwork::NeuralNetwork(NeuralNetwork *network)
     // Deep copy constructor
     this->inputs = network->inputs;
     this->outputs = network->outputs;
+    this->packetCount = network->packetCount;
+    this->midRepeats = network->midRepeats;
+    this->randRange = network->randRange;
+    this->randChance = network->randChance;
+    this->Chance = network->Chance;
     // Global params like randRange, etc. are less relevant now, packets have their own.
     // If NetworkConfig had global overrides, they'd be copied here.
-
+    packets.resize(network->packets.size());
+    Inputs.resize(network->Inputs.size());
+    Outputs.resize(network->Outputs.size());
     for (int i = 0; i < network->packets.size(); i++)
     {
-        Packet *packet_ptr = &network->packets[i];
-        // Use unique_ptr to manage memory automatically
-        // This assumes Packet has a proper copy constructor or Clone method
-        // If Clone is not implemented, we need to implement it in Packet class
-        if (packet_ptr)
+        network->packets[i].CloneTo(&packets[i]);
+    }
+    for (int i = 0; i < network->Inputs.size(); i++)
+    {
+        network->Inputs[i].CloneTo(&Inputs[i]);
+    }
+    for (int i = 0; i < network->Outputs.size(); i++)
+    {
+        network->Outputs[i].CloneTo(&Outputs[i]);
+    }
+    
+    for (int i = 0; i < network->Inputs.size(); i++)
+    {
+        for (int j = 0; j < network->Inputs[i].getNumSyns(); j++)
         {
-            // Packet::Clone needs to correctly deep copy internal and inter-packet synapses
-            // This is still a TODO in Packet::Clone
-            this->packets.push_back(new Packet(packet_ptr->Clone()));
+            Neuron *targetOriginal = network->Inputs[i].getSynapses()[j].getTo();
+            int synStrength = targetOriginal->getSynapses()->getStrength();
+            int Packetindex = 0;
+            int targetIdxOriginal = 0;
+            int targetLayer = 0; // always gonna be to the input layer of the packet
+            for (int i = 0; i < network->packets.size(); i++)
+            {
+                if (network->packets[i].findNeuron(targetOriginal) != -1)
+                {
+                    Packetindex = i;
+                    targetIdxOriginal = network->packets[i].findNeuron(targetOriginal);
+                    break;
+                }
+            }
+
+            Neuron *targetClone = packets[Packetindex].getNeuron(targetLayer, targetIdxOriginal);
+            Inputs[i].MakeSynapse(synStrength, targetClone);
         }
     }
-    // TODO: After cloning packets, inter-packet synapses also need to be cloned and re-mapped
-    // This is part of the complex deep copy process.
+    for (int i = 0; i < packetCount; i++)
+    {
+        for (int j = 0; j < packets[i].getOutputs(); j++)
+        {
+            Packet *pkt = &packets[i];
+            for (int k = 0; k < ((*pkt->GetOutputs())[j].getNumSyns()); k++)
+            {
+                Neuron *frm = &((*pkt->GetOutputs())[j]);
+                Neuron *targetOriginal = frm->getSynapses()[k].getTo();
+                int synStrength = frm->getSynapses()->getStrength();
+                int targetIdxOriginal = targetOriginal - Outputs.data();
+                (*packets[i].GetOutputs())[j].MakeSynapse(synStrength, &Outputs[targetIdxOriginal]);
+            }
+        }
+    }
 }
 
 NeuralNetwork::~NeuralNetwork()
@@ -50,7 +93,105 @@ NeuralNetwork *NeuralNetwork::Clone()
 {
     return new NeuralNetwork(this); // Use the copy constructor
 }
+void NeuralNetwork::CloneTo(NeuralNetwork *newNetwork)
+{
+    newNetwork->inputs = this->inputs;
+    newNetwork->outputs = this->outputs;
+    newNetwork->packetCount = this->packetCount;
+    newNetwork->midRepeats = this->midRepeats;
+    newNetwork->randRange = this->randRange;
+    newNetwork->randChance = this->randChance;
+    newNetwork->Chance = this->Chance;
+    newNetwork->packets.resize(this->packets.size());
+    for (int i = 0; i < this->packets.size(); i++)
+    {
+        this->packets[i].CloneTo(&newNetwork->packets[i]);
+    }
+    newNetwork->Inputs.clear();
+    newNetwork->Outputs.clear();
+    newNetwork->Inputs.resize(this->Inputs.size());
+    newNetwork->Outputs.resize(this->Inputs.size());
+    for (int i = 0; i < this->Inputs.size(); i++)
+    {
+        this->Inputs[i].CloneTo(&newNetwork->Inputs[i]);
+    }
+    for (int i = 0; i < this->Outputs.size(); i++)
+    {
+        this->Outputs[i].CloneTo(&newNetwork->Outputs[i]);
+    }
+    for (int i = 0; i < this->Inputs.size(); i++)
+    {
+        for (int j = 0; j < this->Inputs[i].getNumSyns(); j++)
+        {
+            Neuron *targetOriginal = this->Inputs[i].getSynapses()[j].getTo();
+            int synStrength = targetOriginal->getSynapses()->getStrength();
+            int Packetindex = 0;
+            int targetIdxOriginal = 0;
+            int targetLayer = 0; // always gonna be to the input layer of the packet
+            for (int i = 0; i < this->packets.size(); i++)
+            {
+                if (this->packets[i].findNeuron(targetOriginal) != -1)
+                {
+                    Packetindex = i;
+                    targetIdxOriginal = this->packets[i].findNeuron(targetOriginal);
+                    break;
+                }
+            }
 
+            Neuron *targetClone = newNetwork->packets[Packetindex].getNeuron(targetLayer, targetIdxOriginal);
+            newNetwork->Inputs[i].MakeSynapse(synStrength, targetClone);
+        }
+    }
+    for (int i = 0; i < packetCount; i++)
+    {
+        for (int j = 0; j < packets[i].getOutputs(); j++)
+        {
+            Packet *pkt = &packets[i];
+            for (int k = 0; k < ((*pkt->GetOutputs())[j].getNumSyns()); k++)
+            {
+                Neuron *frm = &((*pkt->GetOutputs())[j]);
+                Neuron *targetOriginal = frm->getSynapses()[k].getTo();
+                int synStrength = frm->getSynapses()->getStrength();
+                int targetIdxOriginal = targetOriginal - Outputs.data();
+                (*newNetwork->packets[i].GetOutputs())[j].MakeSynapse(synStrength, &newNetwork->Outputs[targetIdxOriginal]);
+            }
+        }
+    }
+}
+bool NeuralNetwork::operator==(const NeuralNetwork &other)
+{
+    if (this == &other)
+        return true; // Same object
+
+    if (inputs != other.inputs || outputs != other.outputs || packetCount != other.packetCount)
+        return false;
+
+    for (int i = 0; i < packets.size(); ++i)
+    {
+        if (!((Packet)packets[i]).operator==(other.packets[i])) return false;
+    }
+	// for (int i = 0; i < inputs; i++)
+	// {
+	// 	for (int j = 0; j < Inputs[i].getNumSyns(); j++)
+	// 	{
+	// 		int strength = Inputs[i].getSynapses()[j].getStrength();
+	// 		int otherStrength = (*((Packet)other).GetInputs())[i].getSynapses()[j].getStrength();
+	// 		int toIndex = getNeuronIndex(Inputs[i].getSynapses()[j].getTo());
+	// 		int otherToIndex = ((Packet)other).getNeuronIndex((*((Packet)other).GetInputs())[i].getSynapses()[j].getTo());
+	// 		val &= (strength == otherStrength && toIndex == otherToIndex);
+	// 		if (val == false)
+	// 			return false;
+	// 	}
+	// 	int bias = Inputs[i].getBias();
+	// 	int otherBias = (*((Packet)other).GetInputs())[i].getBias();
+	// 	bool oprtr = Inputs[i].getOperator();
+	// 	bool otherOprtr = (*((Packet)other).GetInputs())[i].getOperator();
+	// 	val &= (bias == otherBias && oprtr == otherOprtr);
+	// 	if (val == false)
+	// 		return false;
+	// }
+    return true;
+}
 void NeuralNetwork::AddPacket(Packet *packet)
 {
     if (packet)
@@ -78,10 +219,10 @@ void NeuralNetwork::Init(const NetworkConfig &config)
     this->inputs = config.systemInputs;
     this->outputs = config.systemOutputs;
     this->packets.clear(); // Clear any existing packets
-    this->randChance=config.globalRandChance;
-    this->randRange=config.globalRandRange;
-    this->midRepeats=config.globalRepeats;
-    this->Chance=config.globalChance;
+    this->randChance = config.globalRandChance;
+    this->randRange = config.globalRandRange;
+    this->midRepeats = config.globalRepeats;
+    this->Chance = config.globalChance;
     this->packetCount = config.packetConfigs.size();
     packets.resize(packetCount);
     // 1. Create Packets based on configuration
@@ -89,23 +230,22 @@ void NeuralNetwork::Init(const NetworkConfig &config)
     {
         auto pkt_config = config.packetConfigs[i];
         this->packets[i].Init(pkt_config.id,
-                pkt_config.inputs,
-                pkt_config.neurons,
-                pkt_config.outputs,
-                pkt_config.commOutputs,
-                -1,                    // maxSyns (use packet default or add to config)
-                0,                     // outSyns (use packet default or add to config)
-                0,                     // commOutSyns (use packet default or add to config)
-                pkt_config.repeats,    // Use packet-specific repeats
-                pkt_config.randRange,  // Use packet-specific randRange
-                pkt_config.randChance, // Use packet-specific randChance
-                pkt_config.SynChance      // Use packet-specific Chance
+                              pkt_config.inputs,
+                              pkt_config.neurons,
+                              pkt_config.outputs,
+                              pkt_config.commOutputs,
+                              -1,                    // maxSyns (use packet default or add to config)
+                              0,                     // outSyns (use packet default or add to config)
+                              0,                     // commOutSyns (use packet default or add to config)
+                              pkt_config.repeats,    // Use packet-specific repeats
+                              pkt_config.randRange,  // Use packet-specific randRange
+                              pkt_config.randChance, // Use packet-specific randChance
+                              pkt_config.SynChance   // Use packet-specific Chance
         );
     }
 
     // 2. Create Inter-Packet Synapses based on configuration
     CreateNetwork(config);
-
 }
 
 void NeuralNetwork::CreateNetwork(const NetworkConfig &config)
@@ -163,7 +303,7 @@ void NeuralNetwork::CreateNetwork(const NetworkConfig &config)
                     }
                     if (std::find(neurons.begin(), neurons.end(), n) == neurons.end())
                         neurons.push_back(n);
-                    else 
+                    else
                         n = nullptr; // Avoid duplicates
                 }
             }
@@ -198,7 +338,7 @@ void NeuralNetwork::CreateNetwork(const NetworkConfig &config)
                     }
                     if (std::find(neurons.begin(), neurons.end(), n) == neurons.end())
                         neurons.push_back(n);
-                    else 
+                    else
                         n = nullptr; // Avoid duplicates
                 }
             }
@@ -210,7 +350,7 @@ void NeuralNetwork::CreateNetwork(const NetworkConfig &config)
     }
 }
 
-//UNUSED, AI ADDED IT FOR NO REASON AND I AM YET TO IMPLEMENT PROPERLY
+// UNUSED, AI ADDED IT FOR NO REASON AND I AM YET TO IMPLEMENT PROPERLY
 void NeuralNetwork::CreateInterPacketSynapses(const NetworkConfig &config)
 {
     // Iterate through each defined inter-packet connection
@@ -294,10 +434,6 @@ void NeuralNetwork::CreateInterPacketSynapses(const NetworkConfig &config)
 void NeuralNetwork::SRand()
 {
     srand(time(0)); // Seed globally once
-    // Optionally, if packets have their own SRand that does more, call it:
-    // for (const auto& packet : packets) {
-    //     if (packet) packet->SRand();
-    // }
 }
 
 std::vector<int> NeuralNetwork::Run(int *systemInputValues)
@@ -311,15 +447,12 @@ std::vector<int> NeuralNetwork::Run(int *systemInputValues)
         Inputs[i].FireNow();
     }
 
-    
     std::vector<std::thread> threads;
     // then it would run the packets (maybe even multiple times, each packet would keep track)
     for (int i = 0; i < packets.size(); i++)
     {
         threads.push_back(std::thread([this, i]()
-        {
-            packets[i].Run();
-        }));
+                                      { packets[i].Run(); }));
     }
     // wait for all threads to finish
     for (int i = 0; i < threads.size(); i++)
@@ -342,7 +475,8 @@ std::vector<int> NeuralNetwork::Run(int *systemInputValues)
 
 void NeuralNetwork::RandomiseNetwork()
 {
-    for (int i = 0; i < inputs; i++) {
+    for (int i = 0; i < inputs; i++)
+    {
         Inputs[i].Randomise(randChance, randRange, false, NULL, 0);
         for (int j = 0; j < packets.size(); j++)
         {
@@ -352,7 +486,8 @@ void NeuralNetwork::RandomiseNetwork()
     for (int i = 0; i < packets.size(); i++)
     {
         packets[i].Randomise(Chance);
-        for (int j = 0; j < packets[i].getOutputs(); j++) {
+        for (int j = 0; j < packets[i].getOutputs(); j++)
+        {
             (*packets[i].GetOutputs())[j].RandomiseSynapses(Chance, randChance, randRange, &Outputs);
         }
     }
@@ -385,4 +520,12 @@ fdll Packet *GetPacketFromNetworkByIndex(NeuralNetwork *network, int index)
 fdll Packet *GetPackets(NeuralNetwork *network)
 {
     return (Packet *)((network->GetAllPackets()).data());
+}
+fdll int GetPacketCount(NeuralNetwork *network)
+{
+    return network->GetAllPackets().size();
+}
+fdll void RandomiseNetwork(NeuralNetwork *network)
+{
+    network->RandomiseNetwork();
 }

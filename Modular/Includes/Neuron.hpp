@@ -19,10 +19,12 @@ private:
 
 public:
 	Neuron();
+	Neuron(Neuron *);
 	Neuron(int Bias, bool Oprtr);
     Neuron(int randRange);
     Neuron(int randRange, int index);
-	Neuron Clone();
+	Neuron *Clone();
+	void CloneTo(Neuron *);
 	~Neuron();
 
 	//basic functions
@@ -45,8 +47,9 @@ public:
 	//network functions
 	Synapse *Fire(); // Return type might need review if direct pointer access is critical elsewhere
 	Synapse	*FireNow();
-	void MakeSynapses(Neuron **tos, int amount, int randRange); // Implementation will change
-	void MakeSynapse(Neuron *to, int randRange); // Implementation will change
+	void MakeSynapses(Neuron **tos, int amount, int randRange);
+	void MakeSynapse(Neuron *to, int randRange);
+	void MakeSynapse(int str, Neuron *to); 
 	void InitRandomise(int range);
 	void Randomise(int chance, int range, bool synapses,  std::vector<Neuron> *layer, int synapseChance);
 	int	 RandomiseSynapses(int ChangeChance, int chance, int randRange, std::vector<Neuron> *layer);

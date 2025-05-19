@@ -74,6 +74,8 @@ public:
 	void CreateNetwork(const NetworkConfig& config);
 	~NeuralNetwork();
 	NeuralNetwork *Clone();
+	void CloneTo(NeuralNetwork *);
+    bool operator==(const NeuralNetwork& other);
 
     // Methods to add and get packets
     void AddPacket(Packet *packet);

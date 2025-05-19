@@ -24,7 +24,7 @@ public:
 	int outSyns			{}; // Synapses from Neurons to Outputs
 	int commOutSyns		{}; // Synapses from Neurons to CommOutputs
 	int Chance 			{};
-
+	bool operator==(const Packet& other);
 
 	Packet();
 	Packet(const Packet& packet); // Copy constructor
@@ -32,6 +32,7 @@ public:
 	Packet(Packet *packet); 
 	~Packet();
 	Packet *Clone();
+	void CloneTo(Packet *);
 	void DestroyNeurons();
 
 	int getRandRange() { return randRange; }

@@ -168,13 +168,82 @@ void CreateAndRunNetwork()
     {
         inputs[i] = rand() % 100;
     }
-    // auto out = net->Run(inputs.data());
-    // printf("Outputs: ");
-    // for (int i = 0; i < out.size(); i++)
-    // {
-    //     printf("%i ", out[i]);
-    // }
-    // printf("\n");
+    auto out = net->Run(inputs.data());
+    printf("Outputs: ");
+    for (int i = 0; i < out.size(); i++)
+    {
+        printf("%i ", out[i]);
+    }
+    printf("\n");
+}
+
+void CreateAndCloneNetwork() {
+    int ins = 50;
+    int packets = 3;
+    std::vector<PacketConfig> pkt_configs;
+    std::vector<std::string> Ids = {"packet1", "packet2", "packet3"};
+    for (int i = 0; i < packets; ++i)
+    {
+        PacketConfig pkt_config;
+        pkt_config.id = Ids[i];
+        pkt_config.inputs = 20;
+        pkt_config.neurons = 50;
+        pkt_config.outputs = 10;
+        pkt_config.commOutputs = 0;
+        pkt_configs.push_back(pkt_config);
+    }
+    int outs = 10;
+    NetworkConfig config;
+    config.systemInputs = ins;
+    config.systemOutputs = outs;
+    config.packetConfigs = pkt_configs;
+    config.globalRepeats = 4;
+    config.globalRandRange = 50;
+    config.globalRandChance = 100;
+    config.globalChance = 100;
+    NeuralNetwork *net = new NeuralNetwork();
+    net->Init(config);
+
+    NeuralNetwork *clonedNet = new NeuralNetwork();
+    NeuralNetwork *clonedNet2 = new NeuralNetwork();
+    NeuralNetwork *clonedNet3 = new NeuralNetwork();
+    net->CloneTo(clonedNet);
+    net->CloneTo(clonedNet2);
+    net->CloneTo(clonedNet3);
+    std::vector<int> inputs;
+    inputs.resize(ins);
+    for (int i = 0; i < ins; i++)
+    {
+        inputs[i] = rand() % 100;
+    }
+    auto out = net->Run(inputs.data());
+    printf("Original Outputs: ");
+    for (int i = 0; i < out.size(); i++)
+    {
+        printf("%i ", out[i]);
+    }
+    printf("\n");
+    out = clonedNet->Run(inputs.data());
+    printf("Cloned Outputs: ");
+    for (int i = 0; i < out.size(); i++)
+    {
+        printf("%i ", out[i]);
+    }
+    printf("\n");
+    out = clonedNet2->Run(inputs.data());
+    printf("Cloned2 Outputs: ");
+    for (int i = 0; i < out.size(); i++)
+    {
+        printf("%i ", out[i]);
+    }
+    printf("\n");
+    out = clonedNet3->Run(inputs.data());
+    printf("Cloned3 Outputs: ");
+    for (int i = 0; i < out.size(); i++)
+    {
+        printf("%i ", out[i]);
+    }
+    printf("\n");
 }
 
 void CurrentLiamTest()
@@ -185,7 +254,13 @@ void CurrentLiamTest()
     std::vector<std::thread> threads;
     threads.reserve(networks);
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    CreateAndRunNetwork();
+    CreateAndCloneNetwork();
+    //threading
+    //for (int i = 0; i < networks; i++)
+    //    threads.push_back(std::thread(CreateAndRunNetwork));
+    //for (int i = 0; i < threads.size(); i++)
+    //    if (threads[i].joinable())
+    //        threads[i].join();
     std::chrono::duration<double> elapsed_seconds = std::chrono::high_resolution_clock::now() - start;
     printf("Created and Ran Networks in %f seconds\n", elapsed_seconds.count());
 }
